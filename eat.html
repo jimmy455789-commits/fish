@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BiteRoulette Global ｜ 全球美食盲盒</title>
+  <style>
+    :root {
+      --bg-main: #0a0b0e;
+      --card-bg: #14161d;
+      --card-border: #232733;
+      --accent: #f59e0b;
+      --accent-glow: rgba(245, 158, 11, 0.25);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --blue-accent: #38bdf8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    .glass-card {
+      width: 100%;
+      max-width: 520px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 30px 24px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7), 0 0 35px var(--accent-glow);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      font-size: 1.7rem;
+      letter-spacing: 2px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 40%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .header p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .selector-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    select {
+      width: 100%;
+      background: #1a1e29;
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .location-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .location-toggle input {
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .btn-draw {
+      width: 100%;
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      color: #000;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+    }
+
+    .btn-draw:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5);
+    }
+
+    .btn-draw:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .result-section {
+      display: none;
+      margin-top: 24px;
+      border-top: 1px solid var(--card-border);
+      padding-top: 20px;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-badge {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.12);
+      color: var(--accent);
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .result-query {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .result-location {
+      font-size: 0.8rem;
+      color: var(--blue-accent);
+      margin-bottom: 6px;
+    }
+
+    .result-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .map-frame-wrapper {
+      width: 100%;
+      height: 250px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+      background: #000;
+      margin-bottom: 14px;
+    }
+
+    .map-frame-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      filter: invert(90%) hue-rotate(180deg);
+    }
+
+    .btn-launch {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      background: #1e2433;
+      color: var(--blue-accent);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .btn-launch:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--blue-accent);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+<div class="glass-card">
+  <div class="header">
+    <h1>BITEROULETTE GLOBAL</h1>
+    <p>跨國探索 ｜ 全球城市美食主題盲盒</p>
+  </div>
+
+  <div class="selector-grid">
+    <div class="form-group">
+      <label>1. 選擇國家 / 地區 (Country / Region)</label>
+      <select id="countrySelect"></select>
+    </div>
+
+    <div class="form-group">
+      <label>2. 州 / 省 / 大區 (State / Province)</label>
+      <select id="stateSelect"></select>
+    </div>
+
+    <div class="form-group">
+      <label>3. 城市 / 商圈 (City / District)</label>
+      <select id="citySelect"></select>
+    </div>
+  </div>
+
+  <label class="location-toggle">
+    <input type="checkbox" id="useGps">
+    <span>略過選單，優先使用目前 GPS 座標定位</span>
+  </label>
+
+  <button class="btn-draw" id="btnRoll">🎲 決定探索主題</button>
+
+  <div class="result-section" id="resultBox">
+    <span class="result-badge" id="tagCategory">主題</span>
+    <div class="result-location" id="displayLocation">--</div>
+    <div class="result-query" id="displayTitle">--</div>
+    <div class="result-desc" id="displaySub">--</div>
+
+    <div class="map-frame-wrapper">
+      <iframe id="mapEmbed" src="" loading="lazy"></iframe>
+    </div>
+
+    <a href="#" target="_blank" class="btn-launch" id="mapDirectLink">
+      在 Google Maps 開啟即時探索與評分 ↗
+    </a>
+  </div>
+</div>
+
+<script>
+  // 全球行政區級聯資料庫（包含香港與各大洲熱門區域）
+  const globalLocations = [
+    {
+      country: "台灣 (Taiwan)",
+      states: [
+        { name: "北部地區", cities: ["台北市 信義區", "台北市 大安區", "台北市 中山區", "新北市 板橋區", "新竹市 東區", "桃園市 桃園區", "基隆市 仁愛區"] },
+        { name: "中部地區", cities: ["台中市 西屯區", "台中市 西區", "台中市 北區", "彰化縣 彰化市", "南投縣 埔里鎮", "苗栗縣 三義鄉"] },
+        { name: "南部地區", cities: ["台南市 中西區", "台南市 安平區", "高雄市 前鎮區", "高雄市 左營區", "屏東縣 恆春鎮", "嘉義市 東區"] },
+        { name: "東部與離島", cities: ["花蓮縣 花蓮市", "台東縣 台東市", "宜蘭縣 礁溪鄉", "澎湖縣 馬公市", "金門縣 金城鎮"] }
+      ]
+    },
+    {
+      country: "香港 (Hong Kong)",
+      states: [
+        { name: "香港島 (Hong Kong Island)", cities: ["中環 (Central)", "銅鑼灣 (Causeway Bay)", "灣仔 (Wan Chai)", "上環 (Sheung Wan)", "西環 / 堅尼地城", "北角 / 鰂魚涌"] },
+        { name: "九龍 (Kowloon)", cities: ["尖沙咀 (Tsim Sha Tsui)", "旺角 (Mong Kok)", "油麻地 (Yau Ma Tei)", "深水埗 (Sham Shui Po)", "佐敦 (Jordan)", "觀塘 (Kwun Tong)"] },
+        { name: "新界及離島 (New Territories & Islands)", cities: ["沙田 (Sha Tin)", "荃灣 (Tsuen Wan)", "元朗 (Yuen Long)", "屯門 (Tuen Mun)", "西貢 (Sai Kung)", "大嶼山 東涌"] }
+      ]
+    },
+    {
+      country: "日本 (Japan)",
+      states: [
+        { name: "關東地方 (Kanto)", cities: ["東京都 新宿區", "東京都 澀谷區", "東京都 銀座", "東京都 淺草", "神奈川縣 橫濱市"] },
+        { name: "近畿地方 (Kansai)", cities: ["大阪府 難波/道頓堀", "大阪府 梅田", "京都府 四條河原町", "京都府 祇園", "兵庫縣 神戶三宮"] },
+        { name: "北海道 (Hokkaido)", cities: ["札幌市 中央區/薄野", "小樽市 堺町", "函館市 朝市"] },
+        { name: "九州地方 (Kyushu)", cities: ["福岡市 博多區", "福岡市 天神", "熊本市 中央區"] },
+        { name: "沖繩縣 (Okinawa)", cities: ["那霸市 國際通", "北谷町 美國村"] }
+      ]
+    },
+    {
+      country: "韓國 (South Korea)",
+      states: [
+        { name: "首爾特別市 (Seoul)", cities: ["首爾 弘大 (Hongdae)", "首爾 明洞 (Myeongdong)", "首爾 江南 (Gangnam)", "首爾 聖水洞 (Seongsu)", "首爾 梨泰院 (Itaewon)"] },
+        { name: "釜山廣域市 (Busan)", cities: ["釜山 海雲臺 (Haeundae)", "釜山 西面 (Seomyeon)", "釜山 南浦洞 (Nampo)"] },
+        { name: "濟州道 (Jeju)", cities: ["濟州市 蓮洞", "西歸浦市"] }
+      ]
+    },
+    {
+      country: "美國 (United States)",
+      states: [
+        { name: "加利福尼亞州 (California)", cities: ["Los Angeles Downtown", "San Francisco Chinatown", "San Francisco Union Square", "San Diego Gaslamp"] },
+        { name: "紐約州 (New York)", cities: ["New York Midtown", "New York Brooklyn", "New York Flushing", "New York SoHo"] },
+        { name: "華盛頓州 (Washington)", cities: ["Seattle Pike Place", "Bellevue Downtown"] },
+        { name: "德克薩斯州 (Texas)", cities: ["Austin Downtown", "Houston Galleria"] }
+      ]
+    },
+    {
+      country: "歐洲 (Europe)",
+      states: [
+        { name: "英國 (United Kingdom)", cities: ["London Soho", "London Covent Garden", "London Chinatown", "Edinburgh Old Town"] },
+        { name: "法國 (France)", cities: ["Paris Le Marais", "Paris Saint-Germain", "Lyon Presqu'île"] },
+        { name: "義大利 (Italy)", cities: ["Rome Trastevere", "Milan Duomo", "Florence Historic Centre"] }
+      ]
+    },
+    {
+      country: "東南亞 (Southeast Asia)",
+      states: [
+        { name: "泰國 (Thailand)", cities: ["曼谷 Siam", "曼谷 Thong Lo", "清邁 古城區", "普吉島 芭東"] },
+        { name: "新加坡 (Singapore)", cities: ["Marina Bay", "Chinatown 牛車水", "Orchard Road 烏節路"] },
+        { name: "越南 (Vietnam)", cities: ["河內 老街區", "胡志明市 第一郡", "峴港 海灘區"] }
+      ]
+    },
+    {
+      country: "澳洲 (Australia)",
+      states: [
+        { name: "新南威爾斯州 (NSW)", cities: ["Sydney CBD", "Sydney Chinatown", "Newtown", "Surry Hills"] },
+        { name: "維多利亞州 (VIC)", cities: ["Melbourne CBD", "Carlton (Little Italy)", "Fitzroy"] }
+      ]
+    }
+  ];
+
+  // 全球適用隨機美食主題池
+  const foodArchetypes = [
+    { title: "經典老饕・在地街頭特色小吃", tag: "道地老店", querySuffix: "必吃 特色小吃 推薦", desc: "鑽進在地人的巷弄，品嚐扎根數十年、最接地氣的平價滋味。" },
+    { title: "職人靈魂・濃郁熱湯麵點", tag: "暖心熱湯", querySuffix: "熱湯麵 拉麵 雲吞麵 推薦", desc: "慢熬精華湯底配上勁道麵條，適合想吃點熱呼呼主食的時段。" },
+    { title: "炭火煙燻・燒烤 / 串燒 / 排餐", tag: "肉食主義", querySuffix: "燒肉 烤肉 串燒 推薦", desc: "油脂滴入炭火激發出的焦香，肉汁在口中爆發的純粹爽感。" },
+    { title: "香濃四溢・異國風味料理", tag: "異國風情", querySuffix: "特色異國餐廳 必吃 推薦", desc: "打破常規口味，用濃郁香料與特調醬汁重新刺激食慾。" },
+    { title: "極致鮮甜・鮮撈海鮮料理", tag: "海鮮饗宴", querySuffix: "海鮮餐廳 海鮮小炒 推薦", desc: "清蒸、酥炸或生鮮切片，品嚐大海最純粹的鮮甜與爽脆。" },
+    { title: "悠閒微醺・質感餐酒館 / 居酒屋", tag: "微醺夜色", querySuffix: "Bistro 居酒屋 餐酒館 推薦", desc: "舒適昏暗的燈光與精緻下酒菜，給自己一個慢下來的聚餐時間。" },
+    { title: "輕盈舒活・精緻早午餐與特色咖啡", tag: "咖啡輕食", querySuffix: "Cafe Brunch 早午餐 推薦", desc: "現烤手作麵包配上香濃咖啡，享受無壓力的自在食光。" },
+    { title: "大火鑊氣・熱炒小炒合菜", tag: "鑊氣合菜", querySuffix: "熱炒 合菜 大排檔 推薦", desc: "快炒鍋氣十足的招牌菜餚，最適合三五好友共聚共食。" }
+  ];
+
+  const countrySelect = document.getElementById('countrySelect');
+  const stateSelect = document.getElementById('stateSelect');
+  const citySelect = document.getElementById('citySelect');
+  const useGps = document.getElementById('useGps');
+  const btnRoll = document.getElementById('btnRoll');
+  const resultBox = document.getElementById('resultBox');
+  const tagCategory = document.getElementById('tagCategory');
+  const displayLocation = document.getElementById('displayLocation');
+  const displayTitle = document.getElementById('displayTitle');
+  const displaySub = document.getElementById('displaySub');
+  const mapEmbed = document.getElementById('mapEmbed');
+  const mapDirectLink = document.getElementById('mapDirectLink');
+
+  function initSelectors() {
+    countrySelect.innerHTML = globalLocations.map((item, idx) => 
+      `<option value="${idx}">${item.country}</option>`
+    ).join('');
+
+    updateStates();
+  }
+
+  function updateStates() {
+    const cIdx = parseInt(countrySelect.value, 10);
+    const states = globalLocations[cIdx].states;
+
+    stateSelect.innerHTML = states.map((item, idx) => 
+      `<option value="${idx}">${item.name}</option>`
+    ).join('');
+
+    updateCities();
+  }
+
+  function updateCities() {
+    const cIdx = parseInt(countrySelect.value, 10);
+    const sIdx = parseInt(stateSelect.value, 10);
+    const cities = globalLocations[cIdx].states[sIdx].cities;
+
+    citySelect.innerHTML = cities.map(city => 
+      `<option value="${city}">${city}</option>`
+    ).join('');
+  }
+
+  countrySelect.addEventListener('change', updateStates);
+  stateSelect.addEventListener('change', updateCities);
+
+  btnRoll.addEventListener('click', () => {
+    btnRoll.textContent = "搜尋全網中...";
+    btnRoll.disabled = true;
+
+    const pickedTheme = foodArchetypes[Math.floor(Math.random() * foodArchetypes.length)];
+
+    if (useGps.checked && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          renderResult(pickedTheme, `${lat},${lng}`, "📍 目前 GPS 定位周圍", true);
+        },
+        () => {
+          const fallbackLoc = getSelectedLocationName();
+          renderResult(pickedTheme, fallbackLoc.queryText, fallbackLoc.labelText, false);
+        },
+        { timeout: 5000 }
+      );
+    } else {
+      const selected = getSelectedLocationName();
+      renderResult(pickedTheme, selected.queryText, selected.labelText, false);
+    }
+  });
+
+  function getSelectedLocationName() {
+    const cName = countrySelect.options[countrySelect.selectedIndex].text;
+    const sName = stateSelect.options[stateSelect.selectedIndex].text;
+    const cityName = citySelect.value;
+    return {
+      queryText: `${cName.split(' ')[0]} ${cityName}`,
+      labelText: `${cName} › ${sName} › ${cityName}`
+    };
+  }
+
+  function renderResult(theme, locationQuery, locationLabel, isCoords) {
+    tagCategory.textContent = theme.tag;
+    displayLocation.textContent = locationLabel;
+    displayTitle.textContent = theme.title;
+    displaySub.textContent = theme.desc;
+
+    let fullSearchQuery = isCoords 
+      ? `${theme.querySuffix}` 
+      : `${locationQuery} ${theme.querySuffix}`;
+
+    const encoded = encodeURIComponent(fullSearchQuery);
+
+    mapDirectLink.href = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
+    mapEmbed.src = `https://maps.google.com/maps?q=${encoded}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+
+    resultBox.style.display = 'block';
+    resultBox.scrollIntoView({ behavior: 'smooth' });
+
+    btnRoll.textContent = "再抽一次！";
+    btnRoll.disabled = false;
+  }
+
+  initSelectors();
+</script>
+
+</body>
+</html>
