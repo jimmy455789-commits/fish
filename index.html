@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BiteRoulette Global ｜ 全球 4 階全行政區美食盲盒</title>
+  <title>BiteRoulette ｜ 真實店家動態抽籤 (純路線 A)</title>
   <style>
     :root {
       --bg-main: #0a0b0e;
@@ -14,6 +14,7 @@
       --text-main: #f3f4f6;
       --text-muted: #9ca3af;
       --blue-accent: #38bdf8;
+      --green-accent: #10b981;
     }
 
     * {
@@ -107,7 +108,6 @@
       font-size: 0.9rem;
       outline: none;
       cursor: pointer;
-      transition: border-color 0.2s;
     }
 
     select:focus {
@@ -184,35 +184,44 @@
       font-weight: 600;
     }
 
-    .modifier-badge {
-      background: rgba(56, 189, 248, 0.12);
-      color: var(--blue-accent);
-      border-color: rgba(56, 189, 248, 0.3);
+    .badge-status {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--green-accent);
+      border-color: rgba(16, 185, 129, 0.3);
     }
 
     .result-query {
-      font-size: 1.35rem;
-      font-weight: 700;
+      font-size: 1.45rem;
+      font-weight: 800;
       color: #fff;
-      margin-bottom: 4px;
-    }
-
-    .result-location {
-      font-size: 0.8rem;
-      color: var(--text-muted);
       margin-bottom: 8px;
     }
 
-    .result-desc {
+    .info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
       font-size: 0.85rem;
-      color: #d1d5db;
-      margin-bottom: 14px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
       line-height: 1.4;
+    }
+
+    .info-icon {
+      color: var(--accent);
+      width: 16px;
+      text-align: center;
     }
 
     .map-frame-wrapper {
       width: 100%;
-      height: 250px;
+      height: 240px;
       border-radius: 12px;
       overflow: hidden;
       border: 1px solid var(--card-border);
@@ -225,6 +234,12 @@
       height: 100%;
       border: none;
       filter: invert(90%) hue-rotate(180deg);
+    }
+
+    .btn-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
     }
 
     .btn-launch {
@@ -249,8 +264,8 @@
 
 <div class="glass-card">
   <div class="header">
-    <h1>BITEROULETTE GLOBAL</h1>
-    <p>嚴格 4 階全行政區 ｜ 全球單店美食盲盒</p>
+    <h1>BITEROULETTE</h1>
+    <p>真正連線 OpenStreetMap 抽取真實店家</p>
   </div>
 
   <div class="selector-container">
@@ -277,76 +292,148 @@
 
   <label class="location-toggle">
     <input type="checkbox" id="useGps">
-    <span>略過 4 階選單，改用目前 GPS 座標直接定位</span>
+    <span>略過選單，即時掃描身邊 GPS 座標 2 公里內的真實店家</span>
   </label>
 
-  <button class="btn-draw" id="btnRoll">🎲 隨機鎖定這一家！</button>
+  <button class="btn-draw" id="btnRoll">🎲 抓取名冊並隨機抽一家！</button>
 
   <div class="result-section" id="resultBox">
     <div class="tags-row">
-      <span class="result-badge" id="tagCategory">今日命定料理</span>
-      <span class="result-badge modifier-badge" id="tagModifier">鎖定模式</span>
+      <span class="result-badge" id="tagCategory">真實料理</span>
+      <span class="result-badge badge-status" id="tagStatus">OSM 實體店家</span>
     </div>
-    <div class="result-location" id="displayLocation">--</div>
-    <div class="result-query" id="displayTitle">--</div>
-    <div class="result-desc" id="displaySub">--</div>
+    
+    <!-- 真正的具體單一店名 -->
+    <div class="result-query" id="displayStoreName">--</div>
+
+    <div class="info-list">
+      <div class="info-item">
+        <span class="info-icon">📍</span>
+        <span id="displayAddress">地址載入中...</span>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">🕒</span>
+        <span id="displayHours">營業時間載入中...</span>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">📞</span>
+        <span id="displayPhone">電話載入中...</span>
+      </div>
+    </div>
 
     <div class="map-frame-wrapper">
       <iframe id="mapEmbed" src="" loading="lazy"></iframe>
     </div>
 
-    <a href="#" target="_blank" class="btn-launch" id="mapDirectLink">
-      在 Google Maps 鎖定這家店（查看評價 / 菜單 / 導航）↗
-    </a>
+    <div class="btn-actions">
+      <a href="#" target="_blank" class="btn-launch" id="mapDirectLink">
+        在 Google Maps 鎖定本店（查看評分 / 菜單 / 導航）↗
+      </a>
+    </div>
   </div>
 </div>
 
 <script>
-  // 完整收錄：台灣 22 縣市共 368 鄉鎮市區無遺漏、香港 18 區無遺漏、日韓美歐完整 4 階
+  // 帶有真實中心經緯度的 4 階選單資料庫
+  // 這是 Overpass API 能百分之百精準抓到「該鄉鎮所有真實店家名單」的關鍵
   const globalLocations = [
     {
       country: "台灣 (Taiwan)",
       states: [
         {
-          name: "北部地區 (基/北/桃/竹/宜)",
+          name: "北部地區",
           cities: [
-            { name: "基隆市", towns: ["仁愛區", "信義區", "中正區", "中山區", "安樂區", "暖暖區", "七堵區"] },
-            { name: "台北市", towns: ["中正區", "大同區", "中山區", "松山區", "大安區", "萬華區", "信義區", "士林區", "北投區", "內湖區", "南港區", "文山區"] },
-            { name: "新北市", towns: ["萬里區", "金山區", "板橋區", "汐止區", "深坑區", "石碇區", "瑞芳區", "平溪區", "雙溪區", "貢寮區", "新店區", "坪林區", "烏來區", "永和區", "中和區", "土城區", "三峽區", "樹林區", "鶯歌區", "三重區", "新莊區", "泰山區", "林口區", "蘆洲區", "五股區", "八里區", "淡水區", "三芝區", "石門區"] },
-            { name: "桃園市", towns: ["中壢區", "平鎮區", "龍潭區", "楊梅區", "新屋區", "觀音區", "桃園區", "龜山區", "八德區", "大溪區", "復興區", "大園區", "蘆竹區"] },
-            { name: "新竹市", towns: ["東區", "北區", "香山區"] },
-            { name: "新竹縣", towns: ["竹北市", "湖口鄉", "新豐鄉", "新埔鎮", "關西鎮", "芎林鄉", "寶山鄉", "竹東鎮", "五峰鄉", "橫山鄉", "尖石鄉", "北埔鄉", "峨眉鄉"] },
-            { name: "宜蘭縣", towns: ["宜蘭市", "頭城鎮", "礁溪鄉", "壯圍鄉", "員山鄉", "羅東鎮", "三星鄉", "大同鄉", "五結鄉", "冬山鄉", "蘇澳鎮", "南澳鄉"] }
+            {
+              name: "台北市",
+              towns: [
+                { name: "信義區", lat: 25.033, lon: 121.565, radius: 2500 },
+                { name: "大安區", lat: 25.026, lon: 121.543, radius: 2500 },
+                { name: "中山區", lat: 25.068, lon: 121.533, radius: 2500 },
+                { name: "中正區", lat: 25.032, lon: 121.518, radius: 2500 },
+                { name: "萬華區", lat: 25.033, lon: 121.499, radius: 2000 },
+                { name: "松山區", lat: 25.059, lon: 121.557, radius: 2000 },
+                { name: "大同區", lat: 25.063, lon: 121.513, radius: 2000 },
+                { name: "士林區", lat: 25.092, lon: 121.524, radius: 3000 },
+                { name: "北投區", lat: 25.132, lon: 121.501, radius: 3500 },
+                { name: "內湖區", lat: 25.083, lon: 121.594, radius: 3500 },
+                { name: "南港區", lat: 25.055, lon: 121.607, radius: 3000 },
+                { name: "文山區", lat: 25.000, lon: 121.570, radius: 3000 }
+              ]
+            },
+            {
+              name: "新北市",
+              towns: [
+                { name: "板橋區", lat: 25.011, lon: 121.462, radius: 2500 },
+                { name: "三重區", lat: 25.072, lon: 121.492, radius: 2500 },
+                { name: "中和區", lat: 24.999, lon: 121.500, radius: 2500 },
+                { name: "永和區", lat: 25.008, lon: 121.517, radius: 2000 },
+                { name: "新莊區", lat: 25.037, lon: 121.449, radius: 3000 },
+                { name: "新店區", lat: 24.967, lon: 121.541, radius: 3000 },
+                { name: "淡水區", lat: 25.171, lon: 121.443, radius: 3500 },
+                { name: "汐止區", lat: 25.062, lon: 121.656, radius: 3500 }
+              ]
+            },
+            {
+              name: "基隆市",
+              towns: [
+                { name: "仁愛區(廟口)", lat: 25.128, lon: 121.741, radius: 2000 },
+                { name: "信義區", lat: 25.129, lon: 121.758, radius: 2500 },
+                { name: "中正區", lat: 25.148, lon: 121.767, radius: 3000 }
+              ]
+            }
           ]
         },
         {
-          name: "中部地區 (苗/中/彰/投/雲)",
+          name: "中部地區",
           cities: [
-            { name: "苗栗縣", towns: ["竹南鎮", "頭份市", "三灣鄉", "南庄鄉", "獅潭鄉", "後龍鎮", "通霄鎮", "苑裡鎮", "苗栗市", "造橋鄉", "頭屋鄉", "公館鄉", "大湖鄉", "泰安鄉", "銅鑼鄉", "三義鄉", "西湖鄉", "卓蘭鎮"] },
-            { name: "台中市", towns: ["中區", "東區", "南區", "西區", "北區", "北屯區", "西屯區", "南屯區", "太平區", "大里區", "霧峰區", "烏日區", "豐原區", "后里區", "石岡區", "東勢區", "和平區", "新社區", "潭子區", "大雅區", "神岡區", "大肚區", "沙鹿區", "龍井區", "梧棲區", "清水區", "大甲區", "外埔區", "大安區"] },
-            { name: "彰化縣", towns: ["彰化市", "芬園鄉", "花壇鄉", "秀水鄉", "鹿港鎮", "福興鄉", "線西鄉", "和美鎮", "伸港鄉", "員林市", "社頭鄉", "永靖鄉", "埔心鄉", "溪湖鎮", "大村鄉", "埔鹽鄉", "田中鎮", "北斗鎮", "田尾鄉", "埤頭鄉", "溪州鄉", "竹塘鄉", "二林鎮", "大城鄉", "芳苑鄉", "二水鄉"] },
-            { name: "南投縣", towns: ["南投市", "中寮鄉", "草屯鎮", "國姓鄉", "埔里鎮", "仁愛鄉", "名間鄉", "集集鎮", "水里鄉", "魚池鄉", "信義鄉", "竹山鎮", "鹿谷鄉"] },
-            { name: "雲林縣", towns: ["斗南鎮", "大埤鄉", "虎尾鎮", "土庫鎮", "褒忠鄉", "東勢鄉", "台西鄉", "崙背鄉", "麥寮鄉", "斗六市", "林內鄉", "古坑鄉", "莿桐鄉", "西螺鎮", "二崙鄉", "北港鎮", "水林鄉", "口湖鄉", "四湖鄉", "元長鄉"] }
+            {
+              name: "彰化縣",
+              towns: [
+                { name: "二林鎮", lat: 23.8997, lon: 120.3752, radius: 3000 },
+                { name: "彰化市", lat: 24.081, lon: 120.538, radius: 3000 },
+                { name: "員林市", lat: 23.959, lon: 120.573, radius: 3000 },
+                { name: "鹿港鎮", lat: 24.056, lon: 120.435, radius: 2500 },
+                { name: "和美鎮", lat: 24.110, lon: 120.500, radius: 3000 },
+                { name: "溪湖鎮", lat: 23.962, lon: 120.481, radius: 3000 },
+                { name: "田中鎮", lat: 23.858, lon: 120.590, radius: 3000 },
+                { name: "北斗鎮", lat: 23.874, lon: 120.523, radius: 2500 }
+              ]
+            },
+            {
+              name: "台中市",
+              towns: [
+                { name: "西屯區(逢甲/七期)", lat: 24.180, lon: 120.645, radius: 3000 },
+                { name: "西區(草悟道)", lat: 24.148, lon: 120.665, radius: 2500 },
+                { name: "北區(一中商圈)", lat: 24.157, lon: 120.686, radius: 2500 },
+                { name: "中區(火車站)", lat: 24.142, lon: 120.684, radius: 1500 },
+                { name: "南屯區", lat: 24.137, lon: 120.640, radius: 3000 },
+                { name: "豐原區", lat: 24.254, lon: 120.720, radius: 3000 }
+              ]
+            }
           ]
         },
         {
-          name: "南部地區 (嘉/南/高/屏)",
+          name: "南部地區",
           cities: [
-            { name: "嘉義市", towns: ["東區", "西區"] },
-            { name: "嘉義縣", towns: ["番路鄉", "梅山鄉", "竹崎鄉", "阿里山鄉", "中埔鄉", "大埔鄉", "水上鄉", "鹿草鄉", "太保市", "朴子市", "東石鄉", "六腳鄉", "新港鄉", "民雄鄉", "大林鎮", "溪口鄉", "義竹鄉", "布袋鎮"] },
-            { name: "台南市", towns: ["中西區", "東區", "南區", "北區", "安平區", "安南區", "永康區", "歸仁區", "新化區", "左鎮區", "玉井區", "楠西區", "南化區", "仁德區", "關廟區", "龍崎區", "官田區", "麻豆區", "佳里區", "西港區", "七股區", "將軍區", "北門區", "新營區", "後壁區", "白河區", "東山區", "六甲區", "下營區", "柳營區", "鹽水區", "善化區", "大內區", "山上區", "新市區", "安定區"] },
-            { name: "高雄市", towns: ["新興區", "前金區", "苓雅區", "鹽埕區", "鼓山區", "旗津區", "前鎮區", "三民區", "楠梓區", "小港區", "左營區", "仁武區", "大社區", "岡山區", "路竹區", "阿蓮區", "田寮區", "燕巢區", "橋頭區", "梓官區", "彌陀區", "永安區", "湖內區", "鳳山區", "大寮區", "林園區", "鳥松區", "大樹區", "旗山區", "美濃區", "六龜區", "內門區", "杉林區", "甲仙區", "桃源區", "那瑪夏區", "茂林區", "茄萣區"] },
-            { name: "屏東縣", towns: ["屏東市", "三地門鄉", "霧台鄉", "瑪家鄉", "九如鄉", "里港鄉", "高樹鄉", "鹽埔鄉", "長治鄉", "麟洛鄉", "竹田鄉", "內埔鄉", "萬丹鄉", "潮州鎮", "泰武鄉", "來義鄉", "萬巒鄉", "崁頂鄉", "新埤鄉", "南州鄉", "林邊鄉", "東港鎮", "琉球鄉", "佳冬鄉", "新園鄉", "枋寮鄉", "枋山鄉", "春日鄉", "獅子鄉", "車城鄉", "牡丹鄉", "恆春鎮", "滿州鄉"] }
-          ]
-        },
-        {
-          name: "東部與離島 (花/東/澎/金/連)",
-          cities: [
-            { name: "花蓮縣", towns: ["花蓮市", "新城鄉", "秀林鄉", "吉安鄉", "壽豐鄉", "鳳林鎮", "光復鄉", "豐濱鄉", "瑞穗鄉", "萬榮鄉", "玉里鎮", "卓溪鄉", "富里鄉"] },
-            { name: "台東縣", towns: ["台東市", "綠島鄉", "蘭嶼鄉", "延平鄉", "卑南鄉", "鹿野鄉", "關山鎮", "海端鄉", "池上鄉", "東河鄉", "成功鎮", "長濱鄉", "太麻里鄉", "金峰鄉", "大武鄉", "達仁鄉"] },
-            { name: "澎湖縣", towns: ["馬公市", "西嶼鄉", "望安鄉", "七美鄉", "白沙鄉", "湖西鄉"] },
-            { name: "金門縣", towns: ["金沙鎮", "金湖鎮", "金寧鄉", "金城鎮", "烈嶼鄉", "烏坵鄉"] },
-            { name: "連江縣", towns: ["南竿鄉", "北竿鄉", "莒光鄉", "東引鄉"] }
+            {
+              name: "台南市",
+              towns: [
+                { name: "中西區(國華街/赤崁)", lat: 22.992, lon: 120.198, radius: 2500 },
+                { name: "安平區", lat: 22.998, lon: 120.165, radius: 2500 },
+                { name: "東區", lat: 22.985, lon: 120.224, radius: 2500 },
+                { name: "永康區", lat: 23.026, lon: 120.256, radius: 3000 }
+              ]
+            },
+            {
+              name: "高雄市",
+              towns: [
+                { name: "左營區(高鐵/巨蛋)", lat: 22.668, lon: 120.303, radius: 3000 },
+                { name: "前鎮區(三多商圈)", lat: 22.603, lon: 120.317, radius: 3000 },
+                { name: "三民區", lat: 22.645, lon: 120.316, radius: 3000 },
+                { name: "新興區/苓雅區", lat: 22.626, lon: 120.306, radius: 2000 },
+                { name: "鹽埕區/鼓山區(駁二)", lat: 22.624, lon: 120.282, radius: 2000 }
+              ]
+            }
           ]
         }
       ]
@@ -357,34 +444,38 @@
         {
           name: "香港島",
           cities: [
-            { name: "中西區", towns: ["中環", "上環", "西營盤", "石塘咀", "堅尼地城", "金鐘", "半山區", "山頂"] },
-            { name: "灣仔區", towns: ["灣仔", "銅鑼灣", "跑馬地", "大坑", "渣甸山"] },
-            { name: "東區", towns: ["北角", "炮台山", "鰂魚涌", "太古城", "西灣河", "筲箕灣", "柴灣", "小西灣"] },
-            { name: "南區", towns: ["香港仔", "鴨脷洲", "田灣", "黃竹坑", "壽臣山", "淺水灣", "赤柱", "石澳", "薄扶林"] }
+            {
+              name: "中西區",
+              towns: [
+                { name: "中環/上環", lat: 22.284, lon: 114.153, radius: 1500 },
+                { name: "西營盤/堅尼地城", lat: 22.285, lon: 114.133, radius: 1500 }
+              ]
+            },
+            {
+              name: "灣仔區/東區",
+              towns: [
+                { name: "銅鑼灣/灣仔", lat: 22.279, lon: 114.182, radius: 1500 },
+                { name: "北角/鰂魚涌", lat: 22.290, lon: 114.205, radius: 1500 }
+              ]
+            }
           ]
         },
         {
-          name: "九龍半島",
+          name: "九龍",
           cities: [
-            { name: "油尖旺區", towns: ["尖沙咀", "尖沙咀東", "佐敦", "油麻地", "旺角", "太子", "大角咀"] },
-            { name: "深水埗區", towns: ["深水埗", "長沙灣", "荔枝角", "美孚", "石硤尾", "南昌", "又一村"] },
-            { name: "九龍城區", towns: ["紅磡", "土瓜灣", "馬頭圍", "九龍城", "啟德", "何文田", "九龍塘"] },
-            { name: "黃大仙區", towns: ["黃大仙", "樂富", "橫頭磡", "鑽石山", "新蒲崗", "慈雲山", "彩虹"] },
-            { name: "觀塘區", towns: ["觀塘", "牛頭角", "九龍灣", "秀茂坪", "藍田", "油塘"] }
-          ]
-        },
-        {
-          name: "新界及離島",
-          cities: [
-            { name: "荃灣區", towns: ["荃灣市中心", "荃灣西", "柴灣角", "深井", "汀九", "馬灣"] },
-            { name: "葵青區", towns: ["葵芳", "葵興", "大窩口", "荔景", "青衣"] },
-            { name: "屯門區", towns: ["屯門市中心", "屯門碼頭", "大興", "良景", "三聖", "黃金海岸"] },
-            { name: "元朗區", towns: ["元朗市中心", "水邊圍", "朗屏", "天水圍", "錦田", "八鄉", "新田", "流浮山"] },
-            { name: "北區", towns: ["上水", "粉嶺", "聯和墟", "沙頭角", "打鼓嶺"] },
-            { name: "大埔區", towns: ["大埔市中心", "大埔墟", "太和", "富善", "大美督", "白石角"] },
-            { name: "沙田區", towns: ["沙田市中心", "大圍", "火炭", "馬鞍山", "石門", "小瀝源"] },
-            { name: "西貢區", towns: ["西貢市中心", "白沙灣", "將軍澳市中心", "調景嶺", "坑口", "寶琳", "康城", "清水灣"] },
-            { name: "離島區", towns: ["東涌", "大澳", "昂坪", "梅窩", "長洲", "南丫島(榕樹灣/索罟灣)", "坪洲"] }
+            {
+              name: "油尖旺區",
+              towns: [
+                { name: "尖沙咀", lat: 22.298, lon: 114.172, radius: 1500 },
+                { name: "旺角/油麻地", lat: 22.316, lon: 114.170, radius: 1500 }
+              ]
+            },
+            {
+              name: "深水埗區",
+              towns: [
+                { name: "深水埗市中心", lat: 22.330, lon: 114.162, radius: 1500 }
+              ]
+            }
           ]
         }
       ]
@@ -395,126 +486,60 @@
         {
           name: "關東地方",
           cities: [
-            { name: "東京都 (23區)", towns: ["千代田區", "中央區", "港區", "新宿區", "文京區", "台東區", "墨田區", "江東區", "品川區", "目黑區", "大田區", "世田谷區", "澀谷區", "中野區", "杉並區", "豐島區", "北區", "荒川區", "板橋區", "練馬區", "足立區", "葛飾區", "江戶川區"] },
-            { name: "東京都 (多摩/島嶼)", towns: ["八王子市", "立川市", "武藏野市", "三鷹市", "府中市", "調布市", "町田市", "小金井市", "小平市", "日野市", "西東京市"] },
-            { name: "神奈川縣", towns: ["橫濱市鶴見區", "橫濱市神奈川區", "橫濱市西區", "橫濱市中區", "橫濱市南區", "橫濱市港北區", "橫濱市戶塚區", "川崎市川崎區", "川崎市中原區", "鎌倉市", "藤澤市", "小田原市", "箱根町"] },
-            { name: "千葉縣", towns: ["千葉市中央區", "千葉市美濱區", "市川市", "船橋市", "松戶市", "野田市", "柏市", "市原市", "浦安市", "成田市"] },
-            { name: "埼玉縣", towns: ["埼玉市大宮區", "埼玉市浦和區", "川越市", "熊谷市", "川口市", "所澤市", "春日部市", "越谷市"] }
+            {
+              name: "東京都",
+              towns: [
+                { name: "新宿區", lat: 35.693, lon: 139.703, radius: 1800 },
+                { name: "澀谷區", lat: 35.659, lon: 139.701, radius: 1800 },
+                { name: "中央區(銀座/築地)", lat: 35.669, lon: 139.769, radius: 1800 },
+                { name: "台東區(淺草/上野)", lat: 35.712, lon: 139.777, radius: 1800 }
+              ]
+            }
           ]
         },
         {
           name: "近畿地方",
           cities: [
-            { name: "大阪府 (大阪市)", towns: ["都島區", "福島區", "此花區", "西區", "港區", "大正區", "天王寺區", "浪速區", "西淀川區", "東淀川區", "東成區", "生野區", "旭區", "城東區", "阿倍野區", "住吉區", "東住吉區", "西成區", "淀川區", "鶴見區", "住之江區", "平野區", "北區", "中央區"] },
-            { name: "大阪府 (周邊市)", towns: ["堺市堺區", "岸和田市", "豐中市", "池田市", "吹田市", "高槻市", "枚方市", "茨木市", "八尾市", "東大阪市"] },
-            { name: "京都府", towns: ["京都市北區", "京都市上京區", "京都市左京區", "京都市中京區", "京都市東山區", "京都市下京區", "京都市南區", "京都市右京區", "京都市伏見區", "京都市山科區", "京都市西京區", "宇治市", "龜岡市"] },
-            { name: "兵庫縣", towns: ["神戶市東灘區", "神戶市灘區", "神戶市兵庫區", "神戶市長田區", "神戶市須磨區", "神戶市垂水區", "神戶市北區", "神戶市中央區", "神戶市西區", "姬路市", "尼崎市", "明石市", "西宮市", "蘆屋市"] },
-            { name: "奈良縣", towns: ["奈良市", "大和高田市", "大和郡山市", "天理市", "橿原市", "生駒市"] }
-          ]
-        },
-        {
-          name: "北海道與東北",
-          cities: [
-            { name: "北海道 (札幌市)", towns: ["中央區", "北區", "東區", "白石區", "豐平區", "南區", "西區", "厚別區", "手稻區", "清田區"] },
-            { name: "北海道 (主要市)", towns: ["函館市", "小樽市", "旭川市", "室蘭市", "釧路市", "帶廣市", "北見市", "夕張市", "岩見澤市", "網走市", "苫小牧市", "稚內市", "千歲市", "登別市", "富良野市"] },
-            { name: "宮城縣", towns: ["仙台市青葉區", "仙台市宮城野區", "仙台市若林區", "仙台市太白區", "仙台市泉區", "石卷市", "鹽竈市", "氣仙沼市", "松島町"] }
-          ]
-        },
-        {
-          name: "九州與沖繩",
-          cities: [
-            { name: "福岡縣", towns: ["福岡市東區", "福岡市博多區", "福岡市中央區", "福岡市南區", "福岡市西區", "福岡市城南區", "福岡市早良區", "北九州市門司區", "北九州市小倉北區", "北九州市小倉南區", "久留米市", "大牟田市", "太宰府市"] },
-            { name: "熊本縣", towns: ["熊本市中央區", "熊本市東區", "熊本市西區", "熊本市南區", "熊本市北區", "八代市", "人吉市", "阿蘇市"] },
-            { name: "沖繩縣", towns: ["那霸市", "宜野灣市", "石垣市", "浦添市", "名護市", "糸滿市", "沖繩市", "豐見城市", "宇流麻市", "宮古島市", "南城市", "國頭郡恩納村", "中頭郡北谷町"] }
-          ]
-        }
-      ]
-    },
-    {
-      country: "韓國 (South Korea)",
-      states: [
-        {
-          name: "首都圈",
-          cities: [
-            { name: "首爾特別市", towns: ["鐘路區", "中區", "龍山區", "城東區", "廣津區", "東大門區", "中浪區", "城北區", "江北區", "道峰區", "蘆原區", "恩平區", "西大門區", "麻浦區", "陽川區", "江西區", "九老區", "衿川區", "永登浦區", "銅雀區", "冠岳區", "瑞草區", "江南區", "松坡區", "江東區"] },
-            { name: "仁川廣域市", towns: ["中區", "東區", "彌鄒忽區", "延壽區", "南洞區", "富平區", "桂陽區", "西區", "江華郡", "甕津郡"] },
-            { name: "京畿道", towns: ["水原市", "城南市", "議政府市", "安養市", "富川市", "光明市", "平澤市", "東豆川市", "安山市", "高陽市", "果川市", "九里市", "南楊州市", "烏山市", "始興市", "軍浦市", "義王市", "河南市", "龍仁市", "坡州市", "利川市", "安城市", "金浦市", "華城市", "廣州市", "楊州市", "抱川市", "驪州市"] }
-          ]
-        },
-        {
-          name: "嶺南與濟州",
-          cities: [
-            { name: "釜山廣域市", towns: ["中區", "西區", "東區", "影島區", "釜山鎮區", "東萊區", "南區", "北區", "海雲臺區", "沙下區", "金井區", "江西區", "蓮堤區", "水營區", "沙上區", "機張郡"] },
-            { name: "大邱廣域市", towns: ["中區", "東區", "西區", "南區", "北區", "壽城區", "達西區", "達城郡", "軍威郡"] },
-            { name: "濟州特別自治道", towns: ["濟州市一徒洞", "濟州市二徒洞", "濟州市三徒洞", "濟州市龍潭洞", "濟州市健入洞", "濟州市涯月邑", "濟州市翰林邑", "濟州市舊左邑", "濟州市朝天邑", "西歸浦市松山洞", "西歸浦市正房洞", "西歸浦市中文洞", "西歸浦市大靜邑", "西歸浦市南元邑", "西歸浦市城山邑", "西歸浦市安德面", "西歸浦市表善面"] }
-          ]
-        }
-      ]
-    },
-    {
-      country: "美國 (United States)",
-      states: [
-        {
-          name: "西岸大區 (West Coast)",
-          cities: [
-            { name: "加利福尼亞州 (洛杉磯郡)", towns: ["洛杉磯市中心(DTLA)", "好萊塢(Hollywood)", "西好萊塢(West Hollywood)", "聖塔莫尼卡(Santa Monica)", "比佛利山(Beverly Hills)", "帕薩迪納(Pasadena)", "長灘(Long Beach)", "格倫代爾(Glendale)"] },
-            { name: "加利福尼亞州 (舊金山灣區)", towns: ["舊金山市區", "奧克蘭(Oakland)", "柏克萊(Berkeley)", "聖荷西(San Jose)", "帕羅奧圖(Palo Alto)", "山景城(Mountain View)", "庫比蒂諾(Cupertino)", "費利蒙(Fremont)"] },
-            { name: "加利福尼亞州 (橘郡及南部)", towns: ["爾灣(Irvine)", "安納罕(Anaheim)", "新港灘(Newport Beach)", "聖地牙哥瓦斯燈街區", "聖地牙哥拉霍亞(La Jolla)"] },
-            { name: "華盛頓州", towns: ["西雅圖市中心", "西雅圖派克市場區", "西雅圖首府山(Capitol Hill)", "貝爾維尤市中心(Bellevue)", "塔科馬(Tacoma)", "斯波坎(Spokane)"] }
-          ]
-        },
-        {
-          name: "東岸大區 (East Coast)",
-          cities: [
-            { name: "紐約州 (紐約市5區)", towns: ["曼哈頓區(Manhattan)", "布魯克林區(Brooklyn)", "皇后區(Queens)", "布朗克斯區(The Bronx)", "史泰登島區(Staten Island)"] },
-            { name: "紐約州 (曼哈頓細分)", towns: ["中城(Midtown)", "上東城(UES)", "上西城(UWS)", "蘇活區(SoHo)", "翠貝卡(TriBeCa)", "格林威治村(Greenwich Village)", "下東城(LES)", "華爾街金融區"] },
-            { name: "麻薩諸塞州", towns: ["波士頓市中心", "波士頓後灣(Back Bay)", "波士頓北端(North End)", "劍橋哈佛廣場", "劍橋MIT周邊"] }
-          ]
-        },
-        {
-          name: "南部與中西部 (South & Midwest)",
-          cities: [
-            { name: "德克薩斯州", towns: ["奧斯汀市中心", "休士頓市中心", "休士頓商業城(Galleria)", "達拉斯市中心", "聖安東尼奧市中心", "沃斯堡市中心"] },
-            { name: "伊利諾州", towns: ["芝加哥環線(Loop)", "芝加哥近北區(River North)", "西環美食街(West Loop)", "林肯公園區(Lincoln Park)"] }
+            {
+              name: "大阪府",
+              towns: [
+                { name: "中央區(難波/道頓堀)", lat: 34.668, lon: 135.502, radius: 1800 },
+                { name: "北區(梅田)", lat: 34.702, lon: 135.498, radius: 1800 }
+              ]
+            },
+            {
+              name: "京都府",
+              towns: [
+                { name: "下京區(四條河原町)", lat: 35.003, lon: 135.768, radius: 1800 },
+                { name: "東山區(祇園)", lat: 35.003, lon: 135.777, radius: 1800 }
+              ]
+            }
           ]
         }
       ]
     }
   ];
 
-  // 300+ 具體跨國料理品項庫
-  const fullCuisineDatabase = [
-    "紅燒牛肉麵", "清燉牛肉麵", "古早味滷肉飯", "火雞肉飯", "筒仔米糕", "南部花生肉粽", "彰化酥皮肉圓", "台南清蒸肉圓", "炭烤大腸包小腸", "脆皮鹽酥雞",
-    "豪大大香雞排", "蚵仔煎", "蝦仁煎", "大腸蚵仔麵線", "生炒花枝羹", "炒鱔魚意麵", "台南溫體牛肉湯", "虱目魚肚湯", "香菇肉羹麵", "土魠魚羹麵",
-    "廟口排骨酥麵", "黑白切乾麵", "台南意麵乾拌", "炭燒薑母鴨", "紅蟳薑母鴨", "溪湖羊肉爐", "岡山羊肉爐", "黑麻油土雞", "九層塔三杯雞", "客家小炒",
-    "梅干扣肉", "薑絲炒大腸", "宜蘭炸卜肉", "傳統糕渣", "東山鴨頭", "碳烤蜜汁玉米", "深坑麻辣臭豆腐", "清蒸紅糟肉圓", "萬巒豬腳", "台式古早味割包",
-    "港式飲茶鮮蝦餃", "豉汁蒸排骨", "蜜汁叉燒包", "流沙奶黃包", "酥皮蛋塔", "鮮蝦脆皮腸粉", "燒臘雙拼飯", "脆皮燒肉", "明爐深井烤鴨", "鳳爪排骨煲仔飯",
-    "乾炒牛河", "XO醬炒蘿蔔糕", "鮮蝦雲吞撈麵", "絲襪奶茶", "冰火菠蘿油", "避風塘炒蟹", "港式胡椒豬肚雞鍋", "澳門豬扒包", "窩蛋生滾牛肉粥", "生滾皮蛋瘦肉粥",
-    "富貴蜜汁火腿", "廣式脆皮煎麵", "鮮蝦腐皮卷", "大排檔炒蜆", "柱侯蘿蔔牛腩煲", "西多士配雪糕", "車仔麵自選", "紅豆雙皮奶", "楊枝甘露", "沙嗲牛肉公仔麵",
-    "正宗四川麻婆豆腐", "重慶水煮牛肉", "重慶水煮魚", "重慶辣子雞", "重慶小麵", "老成都擔擔麵", "川味麻辣香鍋", "東北酸菜白肉鍋", "東北鐵鍋燉大鵝", "湖南剁椒魚頭",
-    "毛氏紅燒肉", "湘西土匪鴨", "富貴東坡肉", "西湖醋魚", "杭州龍井蝦仁", "宋嫂魚羹", "無錫醬排骨", "揚州炒飯", "金陵鹽水鴨", "正宗北京烤鴨",
-    "淮揚清燉獅子頭", "淮揚三丁灌湯包", "上海生煎湯包", "江南醃篤鮮", "上海蔥油開洋拌麵", "閩南傳統佛跳牆", "五柳枝海鱸魚", "福州荔枝肉", "徽州臭鱖魚", "山東德州扒雞",
-    "濃厚豚骨拉麵", "濃郁雞白湯拉麵", "東京醬油拉麵", "特濃魚介沾麵", "札幌辛味噌拉麵", "函館清爽鹽味拉麵", "博多極細長濱拉麵", "酥脆炸豬排定食", "名古屋鰻魚飯三吃", "關東風味壽喜燒",
-    "日式涮涮鍋", "極上和牛燒肉", "厚切牛舌定食", "江戶前手握壽司", "炙燒鮭魚腹丼", "北海道海膽丼", "極上生魚片刺身", "天婦羅海鮮丼", "日式鐵板炒麵", "大阪風道頓堀燒",
-    "廣島牡蠣廣島燒", "博多明太子文字燒", "炭烤居酒屋雞肉串", "日式照燒雞腿串", "關東煮屋台料理", "日式和牛漢堡排", "鐵板滑蛋牛肉丼", "滑蛋炭火親子丼", "日式咖哩豬排飯", "日式唐揚炸雞塊",
-    "讚岐手打烏龍麵", "日式蒸籠冷蕎麥麵", "鴨肉南蠻熱蕎麥麵", "鹽烤挪威鯖魚定食", "明太子鮭魚茶泡飯", "京都酥炸牛排", "烤海苔磯邊燒麻糬", "大阪章魚燒", "海鮮磯燒炭烤", "廣島炸牡蠣定食",
-    "韓式炭烤厚切五花肉", "韓式辣炒年糕", "洋釀蒜味韓式炸雞", "全州石鍋拌飯", "部隊火鍋", "韓式泡菜海鮮湯", "馬鈴薯豬骨排骨湯", "韓式人蔘糯米雞湯", "海鮮蔥煎餅", "水冷麵配冰水",
-    "春川辣炒雞排", "安東燉雞", "首爾牛骨雪濃湯", "韓式辣烤牛肉", "韓式炒雜菜冬粉", "辣炒豬肉定食", "韓式傳統血腸湯", "海鮮嫩豆腐煲", "大醬海鮮鍋", "韓式黑炸醬麵",
-    "泰式冬蔭功海鮮酸辣湯", "泰式打拋豬肉飯", "綠咖哩椰汁嫩雞", "泰式椒麻雞", "泰式清蒸檸檬魚", "泰式月亮蝦餅", "泰式金邊炒河粉", "青木瓜沙拉", "泰式船麵", "黃咖哩炒螃蟹",
-    "越式火車頭牛肉河粉", "越式烤肉涼拌米線", "越式炸春捲", "越式生春捲佐花生醬", "越式法國麵包脆皮三明治", "順化香茅牛肉粉", "新加坡南洋咖哩叻沙", "海南文昌雞飯", "新加坡肉骨茶", "馬來西亞椰漿飯",
-    "美式手打厚牛漢堡", "德州慢火煙燻牛胸肉", "美式炭烤BBQ豬肋排", "水牛城酸辣炸雞翅", "加州酪梨手卷", "紐約薄脆披薩", "夏威夷鮪魚波奇飯", "厚切炭烤安格斯肋眼牛排", "紐奧良香辣烤雞", "路易斯安那手抓海鮮",
-    "波隆那經典肉醬麵", "羅馬經典培根蛋黃麵", "義式煙花女海鮮麵", "熱那亞羅勒青醬蛤蜊麵", "白酒蒜香蛤蜊麵", "拿坡里窯烤瑪格麗特披薩", "帕瑪火腿芝麻葉披薩", "四種起司薄脆披薩", "義式黑松露牛肝菌燉飯", "墨魚汁海鮮燉飯",
-    "法式勃根地紅酒燉牛肉", "法式油封鴨腿", "法式焗烤洋蔥湯", "普羅旺斯燉菜", "法式烤田螺", "庫克太太起司流心三明治", "英式酥炸魚薯條", "英式威靈頓牛排", "英式牧羊人派", "德國酥脆烤豬腳"
-  ];
+  // 料理對照標籤（英文轉換為好懂的中文）
+  const cuisineMap = {
+    chinese: "中式熱炒 / 料理",
+    noodles: "經典傳統麵食",
+    taiwanese: "道地台灣傳統小吃",
+    japanese: "日式料理 / 定食",
+    ramen: "拉麵專門店",
+    sushi: "壽司生魚片",
+    hotpot: "火鍋 / 暖鍋",
+    barbecue: "燒肉 / 串燒",
+    seafood: "海鮮熱炒料理",
+    fast_food: "在地小吃 / 輕快餐",
+    cafe: "特色咖啡館 / 甜點",
+    breakfast: "傳統早午餐點",
+    italian: "義式披薩料理",
+    burger: "漢堡美式速食"
+  };
 
-  const singleStorePickModes = [
-    { mode: "老饕專門店", affix: "專門店 必吃", desc: "鎖定當地名聲響亮的指標專門店！" },
-    { mode: "巷弄私房", affix: "隱藏版 私房推薦", desc: "鎖定巷子裡低調卻驚豔的道地小館！" },
-    { mode: "老字號口碑", affix: "老字號 老店 口碑好", desc: "鎖定經過歲月考驗、基本功扎實的名店！" },
-    { mode: "近鄰人氣", affix: "推薦 名店 本店", desc: "鎖定距離你目前最近的實力好店！" }
-  ];
-
-  let activeFoodPool = [...fullCuisineDatabase];
+  // 快取（避免短時間內重複發出相同座標請求）
+  const coordCache = {};
 
   // 4 階 DOM 元素
   const countrySelect = document.getElementById('countrySelect');
@@ -526,14 +551,15 @@
   const btnRoll = document.getElementById('btnRoll');
   const resultBox = document.getElementById('resultBox');
   const tagCategory = document.getElementById('tagCategory');
-  const tagModifier = document.getElementById('tagModifier');
-  const displayLocation = document.getElementById('displayLocation');
-  const displayTitle = document.getElementById('displayTitle');
-  const displaySub = document.getElementById('displaySub');
+  const tagStatus = document.getElementById('tagStatus');
+  const displayStoreName = document.getElementById('displayStoreName');
+  const displayAddress = document.getElementById('displayAddress');
+  const displayHours = document.getElementById('displayHours');
+  const displayPhone = document.getElementById('displayPhone');
   const mapEmbed = document.getElementById('mapEmbed');
   const mapDirectLink = document.getElementById('mapDirectLink');
 
-  // 初始化第 1 階 (國家)
+  // 初始化第 1 階
   function initSelectors() {
     countrySelect.innerHTML = globalLocations.map((item, idx) => 
       `<option value="${idx}">${item.country}</option>`
@@ -541,7 +567,6 @@
     updateStates();
   }
 
-  // 更新第 2 階 (省/州/大區)
   function updateStates() {
     const cIdx = parseInt(countrySelect.value, 10);
     const states = globalLocations[cIdx].states;
@@ -551,7 +576,6 @@
     updateCities();
   }
 
-  // 更新第 3 階 (市/縣)
   function updateCities() {
     const cIdx = parseInt(countrySelect.value, 10);
     const sIdx = parseInt(stateSelect.value, 10);
@@ -562,86 +586,143 @@
     updateTowns();
   }
 
-  // 更新第 4 階 (鄉鎮市區)
   function updateTowns() {
     const cIdx = parseInt(countrySelect.value, 10);
     const sIdx = parseInt(stateSelect.value, 10);
     const ctIdx = parseInt(citySelect.value, 10);
     const towns = globalLocations[cIdx].states[sIdx].cities[ctIdx].towns;
-    townSelect.innerHTML = towns.map(town => 
-      `<option value="${town}">${town}</option>`
+    townSelect.innerHTML = towns.map((town, idx) => 
+      `<option value="${idx}">${town.name}</option>`
     ).join('');
   }
 
-  // 監聽 4 階聯動
   countrySelect.addEventListener('change', updateStates);
   stateSelect.addEventListener('change', updateCities);
   citySelect.addEventListener('change', updateTowns);
 
-  // 抽籤邏輯
-  btnRoll.addEventListener('click', () => {
-    btnRoll.textContent = "全網鎖定單店中...";
-    btnRoll.disabled = true;
-
-    if (activeFoodPool.length === 0) {
-      activeFoodPool = [...fullCuisineDatabase];
+  // 【核心演算法：路線 A】
+  // 直接以經緯度半徑 (around:radius, lat, lon) 向 Overpass 抓出所有有名字的餐廳
+  async function fetchRealStoresByCoords(lat, lon, radius = 2500) {
+    const cacheKey = `${lat.toFixed(3)}_${lon.toFixed(3)}_${radius}`;
+    if (coordCache[cacheKey] && coordCache[cacheKey].length > 0) {
+      return coordCache[cacheKey];
     }
 
-    const randomIndex = Math.floor(Math.random() * activeFoodPool.length);
-    const pickedDish = activeFoodPool.splice(randomIndex, 1)[0];
-    const pickedMode = singleStorePickModes[Math.floor(Math.random() * singleStorePickModes.length)];
-
-    if (useGps.checked && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          renderResult(pickedDish, pickedMode, `${lat},${lng}`, "📍 目前 GPS 定位周圍", true);
-        },
-        () => {
-          const fallbackLoc = getSelectedLocationName();
-          renderResult(pickedDish, pickedMode, fallbackLoc.queryText, fallbackLoc.labelText, false);
-        },
-        { timeout: 5000 }
+    const query = `
+      [out:json][timeout:15];
+      (
+        node["amenity"~"restaurant|fast_food|cafe|pub"]["name"](around:${radius},${lat},${lon});
+        way["amenity"~"restaurant|fast_food|cafe|pub"]["name"](around:${radius},${lat},${lon});
       );
-    } else {
-      const selected = getSelectedLocationName();
-      renderResult(pickedDish, pickedMode, selected.queryText, selected.labelText, false);
+      out center 100;
+    `;
+
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: query
+    });
+
+    const data = await res.json();
+    const elements = (data.elements || []).filter(item => item.tags && item.tags.name);
+    
+    if (elements.length > 0) {
+      coordCache[cacheKey] = elements;
+    }
+    return elements;
+  }
+
+  // 抽籤按鈕事件
+  btnRoll.addEventListener('click', async () => {
+    btnRoll.textContent = "連線全球資料庫抓取真實店家名冊...";
+    btnRoll.disabled = true;
+
+    try {
+      let lat, lon, radius, locationName;
+
+      if (useGps.checked && navigator.geolocation) {
+        // 使用者勾選 GPS
+        const pos = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 7000 });
+        });
+        lat = pos.coords.latitude;
+        lon = pos.coords.longitude;
+        radius = 2000;
+        locationName = "目前 GPS 定位周圍";
+      } else {
+        // 抓取 4 階選單選取的鄉鎮中心座標
+        const cIdx = parseInt(countrySelect.value, 10);
+        const sIdx = parseInt(stateSelect.value, 10);
+        const ctIdx = parseInt(citySelect.value, 10);
+        const tIdx = parseInt(townSelect.value, 10);
+
+        const townObj = globalLocations[cIdx].states[sIdx].cities[ctIdx].towns[tIdx];
+        const cityName = globalLocations[cIdx].states[sIdx].cities[ctIdx].name;
+
+        lat = townObj.lat;
+        lon = townObj.lon;
+        radius = townObj.radius;
+        locationName = `${cityName} ${townObj.name}`;
+      }
+
+      // 發送真正的 Overpass 請求
+      const stores = await fetchRealStoresByCoords(lat, lon, radius);
+
+      if (!stores || stores.length === 0) {
+        alert(`在【${locationName}】周圍找不到登記的實體餐飲店家，可能是該區域較偏遠，請嘗試選取鄰近市區！`);
+        return;
+      }
+
+      // 【真正的隨機抽籤】從真實店家陣列裡抽出 1 家！
+      const pick = stores[Math.floor(Math.random() * stores.length)];
+      renderStore(pick, locationName);
+
+    } catch (err) {
+      console.error(err);
+      alert("連線開源地圖伺服器超時或網路不穩，請再點一次！");
+    } finally {
+      btnRoll.textContent = "🎲 再抽一家真實餐廳！";
+      btnRoll.disabled = false;
     }
   });
 
-  function getSelectedLocationName() {
-    const cName = countrySelect.options[countrySelect.selectedIndex].text;
-    const sName = stateSelect.options[stateSelect.selectedIndex].text;
-    const ctName = citySelect.options[citySelect.selectedIndex].text;
-    const tName = townSelect.value;
-    return {
-      queryText: `${ctName} ${tName}`,
-      labelText: `${cName.split(' ')[0]} › ${sName} › ${ctName} › ${tName}`
-    };
-  }
+  // 把真正抽中的那家店呈現於畫面上
+  function renderStore(place, locationText) {
+    const tags = place.tags || {};
+    // 真正的店名
+    const storeName = tags.name || tags["name:zh"] || "在地餐飲店";
+    
+    // 經緯度
+    const lat = place.lat || (place.center && place.center.lat);
+    const lon = place.lon || (place.center && place.center.lon);
 
-  function renderResult(dish, mode, locationQuery, locationLabel, isCoords) {
-    tagCategory.textContent = "今日命定料理";
-    tagModifier.textContent = mode.mode;
-    displayLocation.textContent = locationLabel;
-    displayTitle.textContent = `🎯 鎖定這家：${dish}`;
-    displaySub.textContent = `${mode.desc} 系統已定位鎖定專門料理店鋪。`;
+    // 地址結構化
+    let address = "";
+    if (tags["addr:street"]) {
+      address = `${tags["addr:city"] || ""} ${tags["addr:district"] || ""} ${tags["addr:street"]}${tags["addr:housenumber"] ? tags["addr:housenumber"] + "號" : ""}`;
+    } else if (tags["addr:full"]) {
+      address = tags["addr:full"];
+    } else {
+      address = `位於 ${locationText}（座標：${lat.toFixed(4)}, ${lon.toFixed(4)}）`;
+    }
 
-    let targetStoreQuery = isCoords 
-      ? `${dish} ${mode.affix}` 
-      : `${locationQuery} ${dish} ${mode.affix}`;
+    // 料理分類標籤
+    const rawCuisine = tags.cuisine ? tags.cuisine.split(';')[0].toLowerCase().trim() : "";
+    tagCategory.textContent = cuisineMap[rawCuisine] || (tags.amenity === "cafe" ? "咖啡館" : "在地特色餐館");
+    tagStatus.textContent = "OSM 真實已登記店面";
 
-    const encoded = encodeURIComponent(targetStoreQuery);
+    // 真正將真實店名印在畫面上！
+    displayStoreName.textContent = `🏪 ${storeName}`;
+    displayAddress.textContent = address;
+    displayHours.textContent = tags.opening_hours ? `營業時間：${tags.opening_hours}` : "營業時間：請至地圖確認最新營運時間";
+    displayPhone.textContent = tags.phone || tags["contact:phone"] || "未登記電話";
 
-    mapDirectLink.href = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
-    mapEmbed.src = `https://maps.google.com/maps?q=${encoded}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
+    // Google Maps 導向：以「真實店名 + 精確座標」錨定該店家的單一卡片
+    const encodedTarget = encodeURIComponent(`${storeName}`);
+    mapDirectLink.href = `https://www.google.com/maps/search/?api=1&query=${encodedTarget}&center=${lat},${lon}`;
+    mapEmbed.src = `https://maps.google.com/maps?q=${lat},${lon}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
 
     resultBox.style.display = 'block';
     resultBox.scrollIntoView({ behavior: 'smooth' });
-
-    btnRoll.textContent = `再抽一家 (料理庫剩餘 ${activeFoodPool.length} 種)`;
-    btnRoll.disabled = false;
   }
 
   initSelectors();
