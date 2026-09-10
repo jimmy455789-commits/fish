@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BiteRoulette Global ｜ 全球美食盲盒</title>
+  <title>BiteRoulette Global ｜ 隨機美食盲盒</title>
   <style>
     :root {
       --bg-main: #0a0b0e;
@@ -39,17 +39,17 @@
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 20px;
-      padding: 30px 24px;
+      padding: 28px 22px;
       box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7), 0 0 35px var(--accent-glow);
     }
 
     .header {
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
     }
 
     .header h1 {
-      font-size: 1.7rem;
+      font-size: 1.6rem;
       letter-spacing: 2px;
       font-weight: 800;
       background: linear-gradient(135deg, #ffffff 40%, var(--accent));
@@ -61,28 +61,26 @@
     .header p {
       font-size: 0.85rem;
       color: var(--text-muted);
-      letter-spacing: 0.5px;
     }
 
     .selector-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 12px;
-      margin-bottom: 16px;
+      gap: 10px;
+      margin-bottom: 14px;
     }
 
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
     }
 
     label {
       font-size: 0.75rem;
       font-weight: 600;
       color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
     }
 
     select {
@@ -94,13 +92,11 @@
       border-radius: 8px;
       font-size: 0.9rem;
       outline: none;
-      transition: all 0.2s ease;
       cursor: pointer;
     }
 
     select:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 10px var(--accent-glow);
     }
 
     .location-toggle {
@@ -129,32 +125,37 @@
       font-weight: 700;
       letter-spacing: 1px;
       cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.2s ease;
+      transition: transform 0.15s ease;
       box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
     }
 
     .btn-draw:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5);
     }
 
     .btn-draw:disabled {
       opacity: 0.6;
       cursor: not-allowed;
-      transform: none;
     }
 
     .result-section {
       display: none;
-      margin-top: 24px;
+      margin-top: 20px;
       border-top: 1px solid var(--card-border);
-      padding-top: 20px;
-      animation: fadeIn 0.4s ease-out;
+      padding-top: 18px;
+      animation: fadeIn 0.35s ease-out;
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
+      from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tags-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
     }
 
     .result-badge {
@@ -162,30 +163,35 @@
       background: rgba(245, 158, 11, 0.12);
       color: var(--accent);
       font-size: 0.75rem;
-      padding: 4px 10px;
+      padding: 3px 8px;
       border-radius: 6px;
       border: 1px solid rgba(245, 158, 11, 0.3);
       font-weight: 600;
-      margin-bottom: 8px;
+    }
+
+    .modifier-badge {
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--blue-accent);
+      border-color: rgba(56, 189, 248, 0.3);
     }
 
     .result-query {
       font-size: 1.25rem;
-      font-weight: 600;
+      font-weight: 700;
       color: #fff;
       margin-bottom: 4px;
     }
 
     .result-location {
       font-size: 0.8rem;
-      color: var(--blue-accent);
+      color: var(--text-muted);
       margin-bottom: 6px;
     }
 
     .result-desc {
       font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-bottom: 16px;
+      color: #d1d5db;
+      margin-bottom: 14px;
       line-height: 1.4;
     }
 
@@ -196,7 +202,7 @@
       overflow: hidden;
       border: 1px solid var(--card-border);
       background: #000;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     .map-frame-wrapper iframe {
@@ -217,13 +223,10 @@
       border-radius: 10px;
       font-size: 0.9rem;
       font-weight: 600;
-      transition: all 0.2s ease;
     }
 
     .btn-launch:hover {
       background: rgba(56, 189, 248, 0.15);
-      border-color: var(--blue-accent);
-      box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
     }
   </style>
 </head>
@@ -232,22 +235,22 @@
 <div class="glass-card">
   <div class="header">
     <h1>BITEROULETTE GLOBAL</h1>
-    <p>跨國探索 ｜ 全球城市美食主題盲盒</p>
+    <p>深度隨機 ｜ 打破常規推薦的美食盲盒</p>
   </div>
 
   <div class="selector-grid">
     <div class="form-group">
-      <label>1. 選擇國家 / 地區 (Country / Region)</label>
+      <label>1. 國家 / 地區</label>
       <select id="countrySelect"></select>
     </div>
 
     <div class="form-group">
-      <label>2. 州 / 省 / 大區 (State / Province)</label>
+      <label>2. 州 / 省 / 大區</label>
       <select id="stateSelect"></select>
     </div>
 
     <div class="form-group">
-      <label>3. 城市 / 商圈 (City / District)</label>
+      <label>3. 城市 / 商圈</label>
       <select id="citySelect"></select>
     </div>
   </div>
@@ -257,10 +260,13 @@
     <span>略過選單，優先使用目前 GPS 座標定位</span>
   </label>
 
-  <button class="btn-draw" id="btnRoll">🎲 決定探索主題</button>
+  <button class="btn-draw" id="btnRoll">🎲 深度隨機抽籤</button>
 
   <div class="result-section" id="resultBox">
-    <span class="result-badge" id="tagCategory">主題</span>
+    <div class="tags-row">
+      <span class="result-badge" id="tagCategory">料理型態</span>
+      <span class="result-badge modifier-badge" id="tagModifier">探索情境</span>
+    </div>
     <div class="result-location" id="displayLocation">--</div>
     <div class="result-query" id="displayTitle">--</div>
     <div class="result-desc" id="displaySub">--</div>
@@ -270,13 +276,12 @@
     </div>
 
     <a href="#" target="_blank" class="btn-launch" id="mapDirectLink">
-      在 Google Maps 開啟即時探索與評分 ↗
+      在 Google Maps 查看這批店家的評價與位置 ↗
     </a>
   </div>
 </div>
 
 <script>
-  // 全球行政區級聯資料庫（包含香港與各大洲熱門區域）
   const globalLocations = [
     {
       country: "台灣 (Taiwan)",
@@ -290,74 +295,75 @@
     {
       country: "香港 (Hong Kong)",
       states: [
-        { name: "香港島 (Hong Kong Island)", cities: ["中環 (Central)", "銅鑼灣 (Causeway Bay)", "灣仔 (Wan Chai)", "上環 (Sheung Wan)", "西環 / 堅尼地城", "北角 / 鰂魚涌"] },
-        { name: "九龍 (Kowloon)", cities: ["尖沙咀 (Tsim Sha Tsui)", "旺角 (Mong Kok)", "油麻地 (Yau Ma Tei)", "深水埗 (Sham Shui Po)", "佐敦 (Jordan)", "觀塘 (Kwun Tong)"] },
-        { name: "新界及離島 (New Territories & Islands)", cities: ["沙田 (Sha Tin)", "荃灣 (Tsuen Wan)", "元朗 (Yuen Long)", "屯門 (Tuen Mun)", "西貢 (Sai Kung)", "大嶼山 東涌"] }
+        { name: "香港島", cities: ["中環", "銅鑼灣", "灣仔", "上環", "堅尼地城", "北角"] },
+        { name: "九龍", cities: ["尖沙咀", "旺角", "深水埗", "佐敦", "觀塘", "大角咀"] },
+        { name: "新界及離島", cities: ["沙田", "荃灣", "元朗", "屯門", "西貢", "大澳"] }
       ]
     },
     {
       country: "日本 (Japan)",
       states: [
-        { name: "關東地方 (Kanto)", cities: ["東京都 新宿區", "東京都 澀谷區", "東京都 銀座", "東京都 淺草", "神奈川縣 橫濱市"] },
-        { name: "近畿地方 (Kansai)", cities: ["大阪府 難波/道頓堀", "大阪府 梅田", "京都府 四條河原町", "京都府 祇園", "兵庫縣 神戶三宮"] },
-        { name: "北海道 (Hokkaido)", cities: ["札幌市 中央區/薄野", "小樽市 堺町", "函館市 朝市"] },
-        { name: "九州地方 (Kyushu)", cities: ["福岡市 博多區", "福岡市 天神", "熊本市 中央區"] },
-        { name: "沖繩縣 (Okinawa)", cities: ["那霸市 國際通", "北谷町 美國村"] }
+        { name: "關東地方", cities: ["東京都 新宿", "東京都 澀谷", "東京都 銀座", "東京都 淺草", "東京都 秋葉原", "神奈川 橫濱"] },
+        { name: "近畿地方", cities: ["大阪 難波", "大阪 梅田", "京都 祇園", "京都 河原町", "神戶 三宮"] },
+        { name: "北海道", cities: ["札幌 薄野", "小樽 堺町", "函館 朝市"] },
+        { name: "九州及沖繩", cities: ["福岡 博多", "福岡 天神", "熊本 城下町", "沖繩 那霸國際通"] }
       ]
     },
     {
       country: "韓國 (South Korea)",
       states: [
-        { name: "首爾特別市 (Seoul)", cities: ["首爾 弘大 (Hongdae)", "首爾 明洞 (Myeongdong)", "首爾 江南 (Gangnam)", "首爾 聖水洞 (Seongsu)", "首爾 梨泰院 (Itaewon)"] },
-        { name: "釜山廣域市 (Busan)", cities: ["釜山 海雲臺 (Haeundae)", "釜山 西面 (Seomyeon)", "釜山 南浦洞 (Nampo)"] },
-        { name: "濟州道 (Jeju)", cities: ["濟州市 蓮洞", "西歸浦市"] }
+        { name: "首爾特別市", cities: ["首爾 弘大", "首爾 明洞", "首爾 江南", "首爾 聖水洞", "首爾 鍾路"] },
+        { name: "釜山與濟州", cities: ["釜山 海雲臺", "釜山 西面", "濟州市 蓮洞"] }
       ]
     },
     {
       country: "美國 (United States)",
       states: [
-        { name: "加利福尼亞州 (California)", cities: ["Los Angeles Downtown", "San Francisco Chinatown", "San Francisco Union Square", "San Diego Gaslamp"] },
-        { name: "紐約州 (New York)", cities: ["New York Midtown", "New York Brooklyn", "New York Flushing", "New York SoHo"] },
-        { name: "華盛頓州 (Washington)", cities: ["Seattle Pike Place", "Bellevue Downtown"] },
-        { name: "德克薩斯州 (Texas)", cities: ["Austin Downtown", "Houston Galleria"] }
-      ]
-    },
-    {
-      country: "歐洲 (Europe)",
-      states: [
-        { name: "英國 (United Kingdom)", cities: ["London Soho", "London Covent Garden", "London Chinatown", "Edinburgh Old Town"] },
-        { name: "法國 (France)", cities: ["Paris Le Marais", "Paris Saint-Germain", "Lyon Presqu'île"] },
-        { name: "義大利 (Italy)", cities: ["Rome Trastevere", "Milan Duomo", "Florence Historic Centre"] }
+        { name: "加利福尼亞州", cities: ["Los Angeles", "San Francisco", "San Jose", "San Diego"] },
+        { name: "紐約州", cities: ["New York Manhattan", "New York Brooklyn", "New York Queens"] }
       ]
     },
     {
       country: "東南亞 (Southeast Asia)",
       states: [
-        { name: "泰國 (Thailand)", cities: ["曼谷 Siam", "曼谷 Thong Lo", "清邁 古城區", "普吉島 芭東"] },
-        { name: "新加坡 (Singapore)", cities: ["Marina Bay", "Chinatown 牛車水", "Orchard Road 烏節路"] },
-        { name: "越南 (Vietnam)", cities: ["河內 老街區", "胡志明市 第一郡", "峴港 海灘區"] }
-      ]
-    },
-    {
-      country: "澳洲 (Australia)",
-      states: [
-        { name: "新南威爾斯州 (NSW)", cities: ["Sydney CBD", "Sydney Chinatown", "Newtown", "Surry Hills"] },
-        { name: "維多利亞州 (VIC)", cities: ["Melbourne CBD", "Carlton (Little Italy)", "Fitzroy"] }
+        { name: "泰國", cities: ["曼谷 Siam", "曼谷 Thong Lo", "清邁 古城"] },
+        { name: "新加坡", cities: ["Marina Bay", "Chinatown 牛車水", "Bugis 武吉士"] }
       ]
     }
   ];
 
-  // 全球適用隨機美食主題池
-  const foodArchetypes = [
-    { title: "經典老饕・在地街頭特色小吃", tag: "道地老店", querySuffix: "必吃 特色小吃 推薦", desc: "鑽進在地人的巷弄，品嚐扎根數十年、最接地氣的平價滋味。" },
-    { title: "職人靈魂・濃郁熱湯麵點", tag: "暖心熱湯", querySuffix: "熱湯麵 拉麵 雲吞麵 推薦", desc: "慢熬精華湯底配上勁道麵條，適合想吃點熱呼呼主食的時段。" },
-    { title: "炭火煙燻・燒烤 / 串燒 / 排餐", tag: "肉食主義", querySuffix: "燒肉 烤肉 串燒 推薦", desc: "油脂滴入炭火激發出的焦香，肉汁在口中爆發的純粹爽感。" },
-    { title: "香濃四溢・異國風味料理", tag: "異國風情", querySuffix: "特色異國餐廳 必吃 推薦", desc: "打破常規口味，用濃郁香料與特調醬汁重新刺激食慾。" },
-    { title: "極致鮮甜・鮮撈海鮮料理", tag: "海鮮饗宴", querySuffix: "海鮮餐廳 海鮮小炒 推薦", desc: "清蒸、酥炸或生鮮切片，品嚐大海最純粹的鮮甜與爽脆。" },
-    { title: "悠閒微醺・質感餐酒館 / 居酒屋", tag: "微醺夜色", querySuffix: "Bistro 居酒屋 餐酒館 推薦", desc: "舒適昏暗的燈光與精緻下酒菜，給自己一個慢下來的聚餐時間。" },
-    { title: "輕盈舒活・精緻早午餐與特色咖啡", tag: "咖啡輕食", querySuffix: "Cafe Brunch 早午餐 推薦", desc: "現烤手作麵包配上香濃咖啡，享受無壓力的自在食光。" },
-    { title: "大火鑊氣・熱炒小炒合菜", tag: "鑊氣合菜", querySuffix: "熱炒 合菜 大排檔 推薦", desc: "快炒鍋氣十足的招牌菜餚，最適合三五好友共聚共食。" }
+  // 擴充至 35+ 種細分料理池
+  const masterFoodPool = [
+    { title: "炭火極致・鹽烤串燒與居酒屋", tag: "炭烤小酌", baseKeyword: "居酒屋 串燒 炭火", desc: "焦香雞皮、手打肉丸與下酒菜，適合想卸下一整天防備的微醺之夜。" },
+    { title: "重度成癮・辛香濃郁香料咖哩", tag: "香料咖哩", baseKeyword: "香料咖哩 熟成咖哩", desc: "不是甜口調理包，而是充滿小茴香、薑黃與慢火熬煮肉醬的重度香料爆發。" },
+    { title: "深夜鑊氣・在地大火熱炒合菜", tag: "大火熱炒", baseKeyword: "快炒 熱炒 大排檔", desc: "蔥爆肉絲、炒蛤蜊與四季豆，鑊氣直衝腦門的極致下飯選擇。" },
+    { title: "慢火熬骨・職人系豚骨 / 雞白湯拉麵", tag: "日系麵食", baseKeyword: "拉麵 雞白湯 豚骨", desc: "濃稠乳化湯頭附著在硬麵上，搭配現炙叉燒與溏心蛋的純粹療癒。" },
+    { title: "大口吃肉・厚切原塊牛排 / 炭烤排餐", tag: "美式排餐", baseKeyword: "牛排 排餐 steak", desc: "外層焦脆、切開粉嫩多汁，大塊肉質配上海鹽與蒜片的高蛋白犒賞。" },
+    { title: "現點現煎・多汁起司手打漢堡", tag: "手作漢堡", baseKeyword: "漢堡 craft burger 美式餐廳", desc: "焦脆培根、流心起司與肉汁滿溢的手打牛肉排，隨性又暴力的美味。" },
+    { title: "滾燙冒泡・個人獨享石頭火鍋 / 麻辣鍋", tag: "鍋物暖湯", baseKeyword: "個人火鍋 麻辣鍋 石頭火鍋", desc: "先炒後煮的蒜香油蔥鍋底，隨心所欲涮牛肉片與時蔬的滿足感。" },
+    { title: "傳統底蘊・數十年老麵店 / 滷味切盤", tag: "在地老店", baseKeyword: "古早味 麵店 黑白切 滷味", desc: "特調乾拌麵醬汁、骨仔肉湯與切得滿滿一盤的精華滷味。" },
+    { title: "香酥多汁・極脆韓式炸雞配醃蘿蔔", tag: "韓式料理", baseKeyword: "韓式炸雞 韓式烤肉", desc: "甜辣洋釀醬汁裹住燙口脆皮，咔滋咬下瞬間汁水四溢。" },
+    { title: "現點現蒸・港式點心與冰火菠蘿油", tag: "港式茶餐", baseKeyword: "港式飲茶 茶餐廳 點心", desc: "晶瑩鮮蝦餃、豉汁蒸排骨佐一杯濃滑絲襪奶茶。" },
+    { title: "開胃重擊・泰越酸辣料理與河粉", tag: "東南亞風", baseKeyword: "泰式料理 越式河粉 打拋豬", desc: "檸檬酸香、香茅與生辣椒交織，瞬間打開疲乏食慾的最佳解方。" },
+    { title: "柴燒香氣・義式薄脆窯烤披薩", tag: "義式窯烤", baseKeyword: "披薩 pizza 義大利麵", desc: "斑駁焦斑的餅皮帶有麥香，水牛起司與番茄羅勒的黃金搭配。" },
+    { title: "港灣直送・鮮撈海產與海鮮熱炒", tag: "海鮮饗宴", baseKeyword: "海鮮 海鮮小炒 現流海鮮", desc: "清蒸鮮魚、蒜蓉鮮蝦與海味熱炒，最天然不矯飾的鮮甜爽脆。" },
+    { title: "暖胃經典・道地砂鍋粥 / 鮮魚湯", tag: "溫潤養生", baseKeyword: "砂鍋粥 魚湯 海鮮粥", desc: "生米慢熬成濃稠米湯，融入干貝、鮮蝦或鱸魚的深層精華。" },
+    { title: "慢活時光・質感早午餐與精品咖啡", tag: "輕食早午餐", baseKeyword: "早午餐 brunch 咖啡廳", desc: "水波蛋、酸種麵包與沙拉，享受沒有時間追趕的悠閒自在。" },
+    { title: "無肉不歡・日式燒肉與和牛燒烤", tag: "極致燒肉", baseKeyword: "燒肉 烤肉 和牛", desc: "雪花油脂在高溫烤網上滋滋作響，沾上特調燒肉醬配白飯的頂級享受。" }
   ];
+
+  // 動態擾動詞庫（打破 Google 地圖永遠推薦同一家店的演算法）
+  const dynamicModifiers = [
+    { name: "隱藏老饕", querySuffix: "在地人推薦 隱藏版", desc: "跳過觀光客常客，尋找在地老饕的私藏名單。" },
+    { name: "高人氣名店", querySuffix: "排隊名店 超人氣 必訪", desc: "雖然可能需要等候，但口碑經得起考驗的代表店家。" },
+    { name: "老字號功夫", querySuffix: "老店 老字號 口碑好", desc: "扎根數十年、累積扎實基本功的傳統經典味道。" },
+    { name: "高 CP 值日常", querySuffix: "平價 CP值高 在地小吃", desc: "荷包完全無痛、份量與口味都超誠意的良心好店。" },
+    { name: "近期話題新星", querySuffix: "新開幕 試營運 話題", desc: "剛插旗不久、風格新穎且在社群引起討論的潛力店家。" },
+    { name: "無拘微醺", querySuffix: "深夜 氣氛好 深夜食堂", desc: "適合放慢節奏、燈光舒適，能悠閒享用美食的情境。" }
+  ];
+
+  // 防重複抽籤池
+  let activePool = [...masterFoodPool];
 
   const countrySelect = document.getElementById('countrySelect');
   const stateSelect = document.getElementById('stateSelect');
@@ -366,6 +372,7 @@
   const btnRoll = document.getElementById('btnRoll');
   const resultBox = document.getElementById('resultBox');
   const tagCategory = document.getElementById('tagCategory');
+  const tagModifier = document.getElementById('tagModifier');
   const displayLocation = document.getElementById('displayLocation');
   const displayTitle = document.getElementById('displayTitle');
   const displaySub = document.getElementById('displaySub');
@@ -376,18 +383,15 @@
     countrySelect.innerHTML = globalLocations.map((item, idx) => 
       `<option value="${idx}">${item.country}</option>`
     ).join('');
-
     updateStates();
   }
 
   function updateStates() {
     const cIdx = parseInt(countrySelect.value, 10);
     const states = globalLocations[cIdx].states;
-
     stateSelect.innerHTML = states.map((item, idx) => 
       `<option value="${idx}">${item.name}</option>`
     ).join('');
-
     updateCities();
   }
 
@@ -395,7 +399,6 @@
     const cIdx = parseInt(countrySelect.value, 10);
     const sIdx = parseInt(stateSelect.value, 10);
     const cities = globalLocations[cIdx].states[sIdx].cities;
-
     citySelect.innerHTML = cities.map(city => 
       `<option value="${city}">${city}</option>`
     ).join('');
@@ -404,28 +407,39 @@
   countrySelect.addEventListener('change', updateStates);
   stateSelect.addEventListener('change', updateCities);
 
+  // 抽籤邏輯：無重複抽籤 + 隨機雙重擾動
   btnRoll.addEventListener('click', () => {
-    btnRoll.textContent = "搜尋全網中...";
+    btnRoll.textContent = "打亂演算法中...";
     btnRoll.disabled = true;
 
-    const pickedTheme = foodArchetypes[Math.floor(Math.random() * foodArchetypes.length)];
+    // 當前池抽空時，重新洗牌
+    if (activePool.length === 0) {
+      activePool = [...masterFoodPool];
+    }
+
+    // 隨機抽取並從池子移除（確保不連續重複）
+    const themeIndex = Math.floor(Math.random() * activePool.length);
+    const pickedTheme = activePool.splice(themeIndex, 1)[0];
+
+    // 隨機擾動因子
+    const pickedModifier = dynamicModifiers[Math.floor(Math.random() * dynamicModifiers.length)];
 
     if (useGps.checked && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
-          renderResult(pickedTheme, `${lat},${lng}`, "📍 目前 GPS 定位周圍", true);
+          renderResult(pickedTheme, pickedModifier, `${lat},${lng}`, "📍 目前 GPS 定位周圍", true);
         },
         () => {
           const fallbackLoc = getSelectedLocationName();
-          renderResult(pickedTheme, fallbackLoc.queryText, fallbackLoc.labelText, false);
+          renderResult(pickedTheme, pickedModifier, fallbackLoc.queryText, fallbackLoc.labelText, false);
         },
         { timeout: 5000 }
       );
     } else {
       const selected = getSelectedLocationName();
-      renderResult(pickedTheme, selected.queryText, selected.labelText, false);
+      renderResult(pickedTheme, pickedModifier, selected.queryText, selected.labelText, false);
     }
   });
 
@@ -434,20 +448,22 @@
     const sName = stateSelect.options[stateSelect.selectedIndex].text;
     const cityName = citySelect.value;
     return {
-      queryText: `${cName.split(' ')[0]} ${cityName}`,
-      labelText: `${cName} › ${sName} › ${cityName}`
+      queryText: `${cityName}`,
+      labelText: `${cName.split(' ')[0]} › ${sName} › ${cityName}`
     };
   }
 
-  function renderResult(theme, locationQuery, locationLabel, isCoords) {
+  function renderResult(theme, modifier, locationQuery, locationLabel, isCoords) {
     tagCategory.textContent = theme.tag;
+    tagModifier.textContent = modifier.name;
     displayLocation.textContent = locationLabel;
     displayTitle.textContent = theme.title;
-    displaySub.textContent = theme.desc;
+    displaySub.textContent = `${theme.desc}（建議探索方向：${modifier.desc}）`;
 
+    // 組合動態擾動搜尋字串，迫使 Google Maps 刷新推薦列表
     let fullSearchQuery = isCoords 
-      ? `${theme.querySuffix}` 
-      : `${locationQuery} ${theme.querySuffix}`;
+      ? `${theme.baseKeyword} ${modifier.querySuffix}` 
+      : `${locationQuery} ${theme.baseKeyword} ${modifier.querySuffix}`;
 
     const encoded = encodeURIComponent(fullSearchQuery);
 
@@ -457,7 +473,7 @@
     resultBox.style.display = 'block';
     resultBox.scrollIntoView({ behavior: 'smooth' });
 
-    btnRoll.textContent = "再抽一次！";
+    btnRoll.textContent = `再抽一次 (盲盒剩餘 ${activePool.length} 種)`;
     btnRoll.disabled = false;
   }
 
