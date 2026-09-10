@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BiteRoulette UI ｜ 模組化介面</title>
+  <title>BiteRoulette UI ｜ 台港全行政區 4 階選單</title>
   <style>
     :root {
       --bg-main: #0a0b0e;
@@ -64,7 +64,6 @@
       color: var(--text-muted);
     }
 
-    /* 4 階選單容器模組 */
     .selector-container {
       display: flex;
       flex-direction: column;
@@ -155,7 +154,6 @@
       cursor: not-allowed;
     }
 
-    /* 結果展示模組 (預設隱藏) */
     .result-section {
       display: none;
       margin-top: 20px;
@@ -268,28 +266,27 @@
 <div class="glass-card">
   <div class="header">
     <h1>BITEROULETTE</h1>
-    <p>今晚吃什麼？ ｜ 4 階選單介面核心</p>
+    <p>台港全境 386 區 ｜ 4 階選單介面核心</p>
   </div>
 
-  <!-- 4 階連動選單模組 -->
   <div class="selector-container">
     <div class="form-group">
-      <label><span>階層 1</span> 國家 (Country)</label>
+      <label><span>階層 1</span> 國家 / 地區 (Country / Region)</label>
       <select id="countrySelect"></select>
     </div>
 
     <div class="form-group">
-      <label><span>階層 2</span> 省 / 州 / 大區 (State / Region)</label>
+      <label><span>階層 2</span> 區域 (Region / Area)</label>
       <select id="stateSelect"></select>
     </div>
 
     <div class="form-group">
-      <label><span>階層 3</span> 市 / 縣 (City / County)</label>
+      <label><span>階層 3</span> 縣 / 市 / 行政區 (County / District)</label>
       <select id="citySelect"></select>
     </div>
 
     <div class="form-group">
-      <label><span>階層 4</span> 鄉 / 鎮 / 市 / 區 (Township / District)</label>
+      <label><span>階層 4</span> 鄉鎮市區 / 商圈 (Township / Sub-district)</label>
       <select id="townSelect"></select>
     </div>
   </div>
@@ -301,11 +298,10 @@
 
   <button class="btn-draw" id="btnRoll">🎲 開始決定</button>
 
-  <!-- 結果展示模組 -->
   <div class="result-section" id="resultBox">
     <div class="tags-row">
-      <span class="result-badge" id="tagCategory">分類標籤</span>
-      <span class="result-badge badge-status" id="tagStatus">狀態標籤</span>
+      <span class="result-badge" id="tagCategory">區域選定</span>
+      <span class="result-badge badge-status" id="tagStatus">待串接</span>
     </div>
     
     <div class="result-query" id="displayStoreName">店家名稱預覽</div>
@@ -340,7 +336,7 @@
 <script>
   /**
    * ==========================================
-   * 模組 1：行政區域結構定義 (可獨立抽換為外部 JSON)
+   * 模組 1：台港完整行政區劃資料庫 (無刪減)
    * ==========================================
    */
   const locationHierarchy = [
@@ -350,35 +346,81 @@
         {
           name: "北部地區",
           cities: [
-            { name: "台北市", towns: ["中正區", "萬華區", "大同區", "中山區", "松山區", "大安區", "信義區", "士林區", "北投區", "內湖區", "南港區", "文山區"] },
-            { name: "新北市", towns: ["板橋區", "三重區", "中和區", "永和區", "新莊區", "新店區", "土城區", "蘆洲區", "樹林區", "汐止區", "淡水區"] },
-            { name: "基隆市", towns: ["仁愛區", "信義區", "中正區", "中山區", "安樂區", "暖暖區", "七堵區"] }
+            { name: "基隆市", towns: ["仁愛區", "信義區", "中正區", "中山區", "安樂區", "暖暖區", "七堵區"] },
+            { name: "台北市", towns: ["中正區", "萬華區", "大同區", "中山區", "松山區", "大安區", "信義區", "內湖區", "南港區", "士林區", "北投區", "文山區"] },
+            { name: "新北市", towns: ["板橋區", "三重區", "中和區", "永和區", "新莊區", "新店區", "土城區", "蘆洲區", "樹林區", "汐止區", "鶯歌區", "三峽區", "淡水區", "瑞芳區", "五股區", "泰山區", "林口區", "深坑區", "石碇區", "坪林區", "三芝區", "石門區", "八里區", "平溪區", "雙溪區", "貢寮區", "金山區", "萬里區", "烏來區"] },
+            { name: "桃園市", towns: ["桃園區", "中壢區", "平鎮區", "八德區", "楊梅區", "蘆竹區", "大溪區", "龍潭區", "龜山區", "大園區", "觀音區", "新屋區", "復興區"] },
+            { name: "新竹市", towns: ["東區", "北區", "香山區"] },
+            { name: "新竹縣", towns: ["竹北市", "竹東鎮", "新埔鎮", "關西鎮", "湖口鄉", "新豐鄉", "芎林鄉", "橫山鄉", "北埔鄉", "寶山鄉", "峨眉鄉", "尖石鄉", "五峰鄉"] },
+            { name: "宜蘭縣", towns: ["宜蘭市", "羅東鎮", "蘇澳鎮", "頭城鎮", "礁溪鄉", "壯圍鄉", "員山鄉", "冬山鄉", "五結鄉", "三星鄉", "大同鄉", "南澳鄉"] }
           ]
         },
         {
           name: "中部地區",
           cities: [
-            { name: "彰化縣", towns: ["彰化市", "員林市", "和美鎮", "鹿港鎮", "溪湖鎮", "二林鎮", "田中鎮", "北斗鎮"] },
-            { name: "台中市", towns: ["中區", "東區", "南區", "西區", "北區", "西屯區", "南屯區", "北屯區", "豐原區"] }
+            { name: "苗栗縣", towns: ["苗栗市", "頭份市", "竹南鎮", "後龍鎮", "通霄鎮", "苑裡鎮", "卓蘭鎮", "造橋鄉", "西湖鄉", "頭屋鄉", "公館鄉", "銅鑼鄉", "三義鄉", "大湖鄉", "獅潭鄉", "三灣鄉", "南庄鄉", "泰安鄉"] },
+            { name: "台中市", towns: ["中區", "東區", "南區", "西區", "北區", "北屯區", "西屯區", "南屯區", "太平區", "大里區", "霧峰區", "烏日區", "豐原區", "后里區", "石岡區", "東勢區", "和平區", "新社區", "潭子區", "大雅區", "神岡區", "大肚區", "沙鹿區", "龍井區", "梧棲區", "清水區", "大甲區", "外埔區", "大安區"] },
+            { name: "彰化縣", towns: ["彰化市", "員林市", "和美鎮", "鹿港鎮", "溪湖鎮", "二林鎮", "田中鎮", "北斗鎮", "花壇鄉", "芬園鄉", "大村鄉", "永靖鄉", "伸港鄉", "線西鄉", "福興鄉", "秀水鄉", "埔心鄉", "埔鹽鄉", "大城鄉", "芳苑鄉", "竹塘鄉", "社頭鄉", "二水鄉", "田尾鄉", "埤頭鄉", "溪州鄉"] },
+            { name: "南投縣", towns: ["南投市", "埔里鎮", "草屯鎮", "竹山鎮", "集集鎮", "名間鄉", "鹿谷鄉", "中寮鄉", "魚池鄉", "國姓鄉", "水里鄉", "信義鄉", "仁愛鄉"] },
+            { name: "雲林縣", towns: ["斗六市", "斗南鎮", "虎尾鎮", "西螺鎮", "土庫鎮", "北港鎮", "古坑鄉", "大埤鄉", "莿桐鄉", "林內鄉", "二崙鄉", "崙背鄉", "麥寮鄉", "東勢鄉", "褒忠鄉", "台西鄉", "元長鄉", "四湖鄉", "口湖鄉", "水林鄉"] }
           ]
         },
         {
           name: "南部地區",
           cities: [
-            { name: "台南市", towns: ["中西區", "東區", "南區", "北區", "安平區", "安南區", "永康區"] },
-            { name: "高雄市", towns: ["新興區", "前金區", "苓雅區", "鹽埕區", "鼓山區", "前鎮區", "三民區", "左營區"] }
+            { name: "嘉義市", towns: ["東區", "西區"] },
+            { name: "嘉義縣", towns: ["太保市", "朴子市", "布袋鎮", "大林鎮", "民雄鄉", "溪口鄉", "新港鄉", "六腳鄉", "東石鄉", "義竹鄉", "鹿草鄉", "水上鄉", "中埔鄉", "竹崎鄉", "梅山鄉", "番路鄉", "大埔鄉", "阿里山鄉"] },
+            { name: "台南市", towns: ["中西區", "東區", "南區", "北區", "安平區", "安南區", "永康區", "歸仁區", "新化區", "左鎮區", "玉井區", "楠西區", "南化區", "仁德區", "關廟區", "龍崎區", "官田區", "麻豆區", "佳里區", "西港區", "七股區", "將軍區", "北門區", "新營區", "後壁區", "白河區", "東山區", "六甲區", "下營區", "柳營區", "鹽水區", "善化區", "大內區", "山上區", "新市區", "安定區"] },
+            { name: "高雄市", towns: ["新興區", "前金區", "苓雅區", "鹽埕區", "鼓山區", "旗津區", "前鎮區", "三民區", "楠梓區", "小港區", "左營區", "仁武區", "大社區", "岡山區", "路竹區", "阿蓮區", "田寮區", "燕巢區", "橋頭區", "梓官區", "彌陀區", "永安區", "湖內區", "鳳山區", "大寮區", "林園區", "鳥松區", "大樹區", "旗山區", "美濃區", "六龜區", "內門區", "杉林區", "甲仙區", "桃源區", "那瑪夏區", "茂林區", "茄萣區"] },
+            { name: "屏東縣", towns: ["屏東市", "潮州鎮", "東港鎮", "恆春鎮", "萬丹鄉", "長治鄉", "麟洛鄉", "九如鄉", "里港鄉", "鹽埔鄉", "高樹鄉", "萬巒鄉", "內埔鄉", "竹田鄉", "新埤鄉", "枋寮鄉", "新園鄉", "崁頂鄉", "林邊鄉", "南州鄉", "佳冬鄉", "琉球鄉", "車城鄉", "滿州鄉", "枋山鄉", "三地門鄉", "霧台鄉", "瑪家鄉", "泰武鄉", "來義鄉", "春日鄉", "獅子鄉", "牡丹鄉"] }
+          ]
+        },
+        {
+          name: "東部與離島",
+          cities: [
+            { name: "花蓮縣", towns: ["花蓮市", "鳳林鎮", "玉里鎮", "新城鄉", "吉安鄉", "壽豐鄉", "光復鄉", "豐濱鄉", "瑞穗鄉", "富里鄉", "秀林鄉", "萬榮鄉", "卓溪鄉"] },
+            { name: "台東縣", towns: ["台東市", "成功鎮", "關山鎮", "卑南鄉", "大武鄉", "太麻里鄉", "東河鄉", "長濱鄉", "鹿野鄉", "池上鄉", "綠島鄉", "延平鄉", "海端鄉", "達仁鄉", "金峰鄉", "蘭嶼鄉"] },
+            { name: "澎湖縣", towns: ["馬公市", "湖西鄉", "白沙鄉", "西嶼鄉", "望安鄉", "七美鄉"] },
+            { name: "金門縣", towns: ["金城鎮", "金湖鎮", "金沙鎮", "金寧鄉", "烈嶼鄉", "烏坵鄉"] },
+            { name: "連江縣", towns: ["南竿鄉", "北竿鄉", "莒光鄉", "東引鄉"] }
           ]
         }
       ]
     },
     {
-      country: "日本 (Japan)",
+      country: "香港 (Hong Kong)",
       states: [
         {
-          name: "關東地方",
+          name: "香港島",
           cities: [
-            { name: "東京都", towns: ["新宿區", "澀谷區", "千代田區", "中央區", "台東區", "港區"] },
-            { name: "神奈川縣", towns: ["橫濱市中區", "橫濱市西區", "川崎市", "鎌倉市"] }
+            { name: "中西區", towns: ["中環", "金鐘", "上環", "西營盤", "石塘咀", "堅尼地城", "半山區", "山頂"] },
+            { name: "灣仔區", towns: ["灣仔", "銅鑼灣", "跑馬地", "大坑", "渣甸山", "灣仔峽"] },
+            { name: "東區", towns: ["北角", "炮台山", "鰂魚涌", "太古城", "西灣河", "筲箕灣", "柴灣", "小西灣"] },
+            { name: "南區", towns: ["香港仔", "鴨脷洲", "田灣", "黃竹坑", "壽臣山", "深水灣", "淺水灣", "赤柱", "石澳", "薄扶林"] }
+          ]
+        },
+        {
+          name: "九龍半島",
+          cities: [
+            { name: "油尖旺區", towns: ["尖沙咀", "尖東", "佐敦", "油麻地", "旺角", "太子", "大角咀"] },
+            { name: "深水埗區", towns: ["深水埗", "長沙灣", "荔枝角", "美孚", "石硤尾", "南昌", "昂船洲", "又一村"] },
+            { name: "九龍城區", towns: ["紅磡", "土瓜灣", "馬頭圍", "馬頭涌", "九龍城", "啟德", "何文田", "九龍塘"] },
+            { name: "黃大仙區", towns: ["黃大仙", "樂富", "橫頭磡", "鑽石山", "慈雲山", "牛池灣", "新蒲崗", "彩虹"] },
+            { name: "觀塘區", towns: ["觀塘", "牛頭角", "九龍灣", "秀茂坪", "藍田", "油塘", "茶果嶺", "平山"] }
+          ]
+        },
+        {
+          name: "新界及離島",
+          cities: [
+            { name: "荃灣區", towns: ["荃灣市中心", "荃灣西", "柴灣角", "深井", "汀九", "青龍頭", "馬灣"] },
+            { name: "葵青區", towns: ["葵芳", "葵興", "大窩口", "荔景", "青衣"] },
+            { name: "屯門區", towns: ["屯門市中心", "屯門碼頭", "大興", "良景", "三聖", "黃金海岸", "藍地", "掃管笏"] },
+            { name: "元朗區", towns: ["元朗市中心", "水邊圍", "朗屏", "天水圍", "錦田", "八鄉", "新田", "落馬洲", "流浮山", "屏山", "十八鄉"] },
+            { name: "北區", towns: ["上水", "粉嶺", "聯和墟", "沙頭角", "打鼓嶺", "羅湖", "古洞"] },
+            { name: "大埔區", towns: ["大埔市中心", "大埔墟", "太和", "富善", "大美督", "白石角", "船灣", "西貢北"] },
+            { name: "沙田區", towns: ["沙田市中心", "大圍", "火炭", "馬鞍山", "石門", "小瀝源", "圓洲角", "烏溪沙"] },
+            { name: "西貢區", towns: ["西貢市中心", "白沙灣", "將軍澳市中心", "調景嶺", "坑口", "寶琳", "康城", "清水灣", "大網仔"] },
+            { name: "離島區", towns: ["東涌", "大澳", "昂坪", "梅窩", "長洲", "南丫島(榕樹灣)", "南丫島(索罟灣)", "坪洲", "貝澳", "塘福"] }
           ]
         }
       ]
@@ -398,7 +440,6 @@
   const btnRoll = document.getElementById('btnRoll');
   const resultBox = document.getElementById('resultBox');
 
-  // 初始化選單
   function initSelectorEngine() {
     countrySelect.innerHTML = locationHierarchy.map((c, i) => `<option value="${i}">${c.country}</option>`).join('');
     updateStates();
@@ -433,11 +474,10 @@
 
   /**
    * ==========================================
-   * 模組 3：外部事件掛載與回呼 (Callback Hook)
+   * 模組 3：事件處理接口 (Callback Hook)
    * ==========================================
    */
   btnRoll.addEventListener('click', () => {
-    // 取得當前選定層級資訊
     const selectedData = {
       isGps: useGps.checked,
       country: countrySelect.options[countrySelect.selectedIndex].text,
@@ -449,18 +489,15 @@
     onDrawButtonClick(selectedData);
   });
 
-  // 此處為下一步即將掛載邏輯的核心函式
   function onDrawButtonClick(locationInfo) {
-    console.log("目前選取地區：", locationInfo);
+    console.log("選定行政區：", locationInfo);
 
-    // 介面展示範例（下一步將由真實搜尋演算法接管此處）
-    document.getElementById('displayStoreName').textContent = `已鎖定：${locationInfo.city} ${locationInfo.town}`;
+    document.getElementById('displayStoreName').textContent = `已選定：${locationInfo.city} ${locationInfo.town}`;
     document.getElementById('displayAddress').textContent = `${locationInfo.country} › ${locationInfo.state} › ${locationInfo.city} › ${locationInfo.town}`;
     resultBox.style.display = 'block';
     resultBox.scrollIntoView({ behavior: 'smooth' });
   }
 
-  // 頁面加載啟動
   initSelectorEngine();
 </script>
 
