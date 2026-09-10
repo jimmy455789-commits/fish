@@ -1246,12 +1246,43 @@
   }
 })();
 </script>
-  <!-- ======================================================== -->
-<!-- 獨立外掛模組：8 秒反灰冷卻計時器 ＋ 真實店家抽取引擎 -->
 <!-- ======================================================== -->
+<!-- 獨立外掛模組：強制 8 秒鎖定 ＋ 旋轉 Loading ＋ 真實店家引擎 -->
+<!-- ======================================================== -->
+<style>
+  /* 旋轉 Loading 圖示樣式 */
+  .btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(0, 0, 0, 0.25);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: btn-spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  @keyframes btn-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* 強制鎖定反灰樣式 */
+  .btn-draw:disabled {
+    background: #4b5563 !important;
+    color: #d1d5db !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+    opacity: 0.85 !important;
+  }
+</style>
+
 <script>
 (function() {
   const dynamicTownCache = {};
+  let isLocked = false; // 嚴格的全域排他鎖
 
   const btnRoll = document.getElementById('btnRoll');
   const resultBox = document.getElementById('resultBox');
@@ -1260,15 +1291,17 @@
 
   if (!btnRoll) return;
 
-  // 清除舊有的全域 Hook，確保事件單一
   window.onDrawButtonClick = null;
 
   btnRoll.onclick = async function(e) {
     e.preventDefault();
     e.stopPropagation();
 
-    // 1. 立即反灰按鈕並啟動 8 秒冷卻計時器
-    startCooldown(8);
+    // 若處於冷卻中，絕對阻斷
+    if (isLocked) return;
+
+    // 1. 立即啟動 8 秒排他鎖定與旋轉圖示
+    startCooldownTimer(8);
 
     const cSel = document.getElementById('countrySelect');
     const sSel = document.getElementById('stateSelect');
@@ -1286,7 +1319,7 @@
 
       if (isGps && navigator.geolocation) {
         const pos = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 4500 });
         });
         centerLat = pos.coords.latitude;
         centerLon = pos.coords.longitude;
@@ -1298,43 +1331,47 @@
         centerLon = coords.lon;
       }
 
-      // 抓取該坐標周遭的真實店家名單
       const realStores = await fetchRealPlaces(centerLat, centerLon, locationLabel);
 
       if (realStores && realStores.length > 0) {
         const picked = realStores[Math.floor(Math.random() * realStores.length)];
         renderRealStoreUI(picked, locationLabel);
       } else {
-        // 該區 OSM 若查無資料，直連 Google Maps 街區
         renderDirectFallback(locationLabel, centerLat, centerLon);
       }
 
     } catch (err) {
-      console.warn("連線等待中或網路波動：", err);
+      console.warn("連線等待或觸發超時保護：", err);
       renderDirectFallback(`${city} ${town}`, null, null);
     }
   };
 
-  // 8 秒強制反灰倒數計時器
-  function startCooldown(seconds) {
+  // 核心：強制鎖定 8 秒計時器（帶旋轉動畫）
+  function startCooldownTimer(totalSeconds) {
+    isLocked = true;
     btnRoll.disabled = true;
-    let remaining = seconds;
 
-    btnRoll.textContent = `⏳ 搜尋中，請稍候 (${remaining}s)...`;
+    let remaining = totalSeconds;
+    updateBtnContent(remaining);
 
-    const timer = setInterval(() => {
+    const countdown = setInterval(() => {
       remaining--;
       if (remaining > 0) {
-        btnRoll.textContent = `⏳ 冷卻中 (${remaining}s)...`;
+        updateBtnContent(remaining);
       } else {
-        clearInterval(timer);
+        clearInterval(countdown);
+        isLocked = false;
         btnRoll.disabled = false;
         btnRoll.textContent = "🎲 再抽一家！";
       }
     }, 1000);
   }
 
-  // 坐標反查（帶 5 秒防禦）
+  function updateBtnContent(sec) {
+    btnRoll.innerHTML = `<span class="btn-spinner"></span>搜尋與連線中 (${sec}s)...`;
+  }
+
+  // 坐標反查（4.5 秒逾時保護）
   async function getCoords(country, city, town) {
     const key = `${city}_${town}`;
     if (dynamicTownCache[key] && dynamicTownCache[key].coords) {
@@ -1342,7 +1379,7 @@
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 4500);
 
     try {
       let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city + " " + town)}&limit=1`;
@@ -1365,26 +1402,25 @@
     } catch (e) {
       clearTimeout(timeoutId);
     }
-    // 預設坐標備援
     return { lat: 23.97, lon: 120.68 };
   }
 
-  // 抓取周邊真實店家（帶 6 秒防禦）
+  // 抓取真實店家名單（5 秒逾時保護）
   async function fetchRealPlaces(lat, lon, cacheKey) {
     if (dynamicTownCache[cacheKey] && dynamicTownCache[cacheKey].stores) {
       return dynamicTownCache[cacheKey].stores;
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     const query = `
-      [out:json][timeout:6];
+      [out:json][timeout:5];
       (
         node["amenity"~"restaurant|fast_food|cafe|pub"]["name"](around:2500,${lat},${lon});
         way["amenity"~"restaurant|fast_food|cafe|pub"]["name"](around:2500,${lat},${lon});
       );
-      out center 50;
+      out center 40;
     `;
 
     try {
@@ -1408,29 +1444,28 @@
     }
   }
 
-  // 渲染真實店家 UI
+  // 正常呈現店家
   function renderRealStoreUI(place, locationLabel) {
     const tags = place.tags || {};
-    const storeName = tags.name || tags["name:zh"] || "在地特選餐飲";
+    const storeName = tags.name || tags["name:zh"] || "在地餐飲店";
     const lat = place.lat || (place.center && place.center.lat);
     const lon = place.lon || (place.center && place.center.lon);
 
     let address = tags["addr:street"] 
       ? `${tags["addr:city"] || ""} ${tags["addr:street"]}${tags["addr:housenumber"] ? tags["addr:housenumber"] + "號" : ""}` 
-      : `位於 ${locationLabel} 街區內`;
+      : `位於 ${locationLabel} 街區商圈`;
 
-    const rawCuisine = tags.cuisine || (tags.amenity === "cafe" ? "特色咖啡館" : "熱門美食");
+    const rawCuisine = tags.cuisine || (tags.amenity === "cafe" ? "咖啡小點" : "精選美食");
 
     document.getElementById('tagCategory').textContent = rawCuisine.split(';')[0];
     document.getElementById('tagStatus').textContent = "真實店家";
     document.getElementById('displayStoreName').textContent = `🏪 ${storeName}`;
     document.getElementById('displayAddress').textContent = address;
-    document.getElementById('displayHours').textContent = tags.opening_hours ? `🕒 營業時間：${tags.opening_hours}` : "🕒 營業時間：請點擊下方連結直達地圖即時確認";
-    document.getElementById('displayPhone').textContent = tags.phone || tags["contact:phone"] ? `📞 電話：${tags.phone || tags["contact:phone"]}` : "📞 電話：未登記（請至 Google 地圖查看）";
+    document.getElementById('displayHours').textContent = tags.opening_hours ? `🕒 營業時間：${tags.opening_hours}` : "🕒 營業時間：請點擊下方 Google 地圖即時確認";
+    document.getElementById('displayPhone').textContent = tags.phone || tags["contact:phone"] ? `📞 電話：${tags.phone || tags["contact:phone"]}` : "📞 電話：未登記（可透過 Google 地圖查詢）";
 
     mapEmbed.src = `https://maps.google.com/maps?q=${lat},${lon}&t=&z=17&ie=UTF8&iwloc=B&output=embed`;
 
-    // 直連該店家專屬 Google Maps 網頁
     const targetQuery = encodeURIComponent(`${storeName}`);
     mapDirectLink.href = `https://www.google.com/maps/search/?api=1&query=${targetQuery}&center=${lat},${lon}`;
     mapDirectLink.textContent = `在 Google Maps 開啟【${storeName}】專屬商家檔案 ↗`;
@@ -1439,13 +1474,13 @@
     resultBox.scrollIntoView({ behavior: 'smooth' });
   }
 
-  // 備援渲染
+  // 備援呈現
   function renderDirectFallback(locationLabel, lat, lon) {
     const query = encodeURIComponent(`${locationLabel} 美食`);
     document.getElementById('tagCategory').textContent = "商圈精選";
     document.getElementById('tagStatus').textContent = "即時導航";
     document.getElementById('displayStoreName').textContent = `📍 已鎖定：${locationLabel}`;
-    document.getElementById('displayAddress').textContent = `${locationLabel} 精華商圈街區`;
+    document.getElementById('displayAddress').textContent = `${locationLabel} 精華商圈`;
     document.getElementById('displayHours').textContent = "🕒 營業時間：點擊下方地圖即時確認";
     document.getElementById('displayPhone').textContent = "📞 電話：透過下方地圖一鍵撥打";
 
