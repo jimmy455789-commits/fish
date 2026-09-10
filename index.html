@@ -1246,6 +1246,253 @@
   }
 })();
 </script>
+<!-- ======================================================== -->
+<!-- 獨立外掛模組：CORS 穿透 ＋ 全球多鏡像重試 ＋ 8秒鎖定與 Spinner -->
+<!-- ======================================================== -->
+<style>
+  /* 旋轉 Loading 圖示動畫 */
+  .btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(0, 0, 0, 0.25);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: btn-spin 0.75s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
 
+  @keyframes btn-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* 按鈕強制鎖定反灰樣式 */
+  .btn-draw:disabled {
+    background: #4b5563 !important;
+    color: #e5e7eb !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+    opacity: 0.85 !important;
+  }
+</style>
+
+<script>
+(function() {
+  const oldBtn = document.getElementById('btnRoll');
+  if (!oldBtn) return;
+
+  // 1. 深度克隆並替換按鈕，徹底抹除任何舊的監聽器與舊事件
+  const btnRoll = oldBtn.cloneNode(true);
+  oldBtn.parentNode.replaceChild(btnRoll, oldBtn);
+
+  // 清空全域 Hook
+  window.onDrawButtonClick = null;
+
+  let isCooldown = false;
+
+  const resultBox = document.getElementById('resultBox');
+  const mapEmbed = document.getElementById('mapEmbed');
+  const mapDirectLink = document.getElementById('mapDirectLink');
+
+  const cSel = document.getElementById('countrySelect');
+  const sSel = document.getElementById('stateSelect');
+  const ctSel = document.getElementById('citySelect');
+  const tSel = document.getElementById('townSelect');
+  const gpsCheck = document.getElementById('useGps');
+
+  // 全球三大 Overpass 鏡像端點（加入 CORS 穿透通道）
+  const corsProxies = [
+    (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    (url) => url // 原生直連作為最後備援
+  ];
+
+  const mirrorEndpoints = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.openstreetmap.fr/api/interpreter"
+  ];
+
+  // 台灣主要行政區基準中心坐標（省去前段 Nominatim 請求負擔，跳區零延遲）
+  const baseCityCoords = {
+    "台北市": [25.0330, 121.5654], "新北市": [25.0169, 121.4627], "基隆市": [25.1276, 121.7391],
+    "桃園市": [24.9936, 121.3009], "新竹市": [24.8138, 120.9674], "新竹縣": [24.8387, 121.0177],
+    "苗栗縣": [24.5601, 120.8214], "台中市": [24.1477, 120.6736], "彰化縣": [24.0518, 120.5161],
+    "南投縣": [23.9609, 120.9718], "雲林縣": [23.7092, 120.4313], "嘉義市": [23.4800, 120.4491],
+    "嘉義縣": [23.4518, 120.2559], "台南市": [22.9997, 120.2270], "高雄市": [22.6273, 120.3014],
+    "屏東縣": [22.6761, 120.4885], "宜蘭縣": [24.7021, 121.7377], "花蓮縣": [23.9871, 121.6015],
+    "台東縣": [22.7583, 121.1444], "澎湖縣": [23.5711, 119.5793], "金門縣": [24.4492, 118.3765],
+    "中西區": [22.2821, 114.1581], "灣仔區": [22.2796, 114.1716], "油尖旺區": [22.3128, 114.1708]
+  };
+
+  btnRoll.addEventListener('click', async function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isCooldown) return;
+
+    // 啟動 8 秒排他計時鎖定
+    startCooldown(8);
+
+    const city = (ctSel && ctSel.selectedIndex >= 0) ? ctSel.options[ctSel.selectedIndex].text.trim() : "彰化縣";
+    const town = (tSel && tSel.selectedIndex >= 0) ? tSel.options[tSel.selectedIndex].text.trim() : "二林鎮";
+    const isGps = gpsCheck ? gpsCheck.checked : false;
+
+    try {
+      let lat, lon, locationLabel;
+
+      if (isGps && navigator.geolocation) {
+        const pos = await new Promise((res, rej) => {
+          navigator.geolocation.getCurrentPosition(res, rej, { timeout: 3500 });
+        });
+        lat = pos.coords.latitude;
+        lon = pos.coords.longitude;
+        locationLabel = "目前 GPS 定位周遭";
+      } else {
+        locationLabel = `${city} ${town}`;
+        const base = baseCityCoords[city] || baseCityCoords[town] || [24.0518, 120.5161];
+        lat = base[0];
+        lon = base[1];
+      }
+
+      // 執行智慧鏡像穿透搜尋
+      const stores = await fetchWithSmartMirrors(lat, lon);
+
+      if (stores && stores.length > 0) {
+        const picked = stores[Math.floor(Math.random() * stores.length)];
+        renderRealStore(picked, locationLabel);
+      } else {
+        alert(`在【${locationLabel}】節點無回應或周邊未收錄，請稍候重試！`);
+      }
+
+    } catch (err) {
+      console.warn("所有鏡像查詢嘗試結束：", err);
+      alert("開源伺服器目前連線量大，請在倒數結束後再試一次！");
+    }
+  });
+
+  // 8 秒倒數定時器與 Loading 動畫更新
+  let remainingSeconds = 0;
+  let statusText = "連線中";
+
+  function startCooldown(seconds) {
+    isCooldown = true;
+    btnRoll.disabled = true;
+    remainingSeconds = seconds;
+    statusText = "連線全球圖資";
+
+    updateButtonUI();
+
+    const timer = setInterval(() => {
+      remainingSeconds--;
+      if (remainingSeconds > 0) {
+        updateButtonUI();
+      } else {
+        clearInterval(timer);
+        isCooldown = false;
+        btnRoll.disabled = false;
+        btnRoll.textContent = "🎲 再抽一家真實店家！";
+      }
+    }, 1000);
+  }
+
+  function updateButtonUI() {
+    btnRoll.innerHTML = `<span class="btn-spinner"></span>${statusText} (${remainingSeconds}s)...`;
+  }
+
+  // 多鏡像輪詢與 CORS 代理穿透邏輯
+  async function fetchWithSmartMirrors(lat, lon) {
+    const query = `
+      [out:json][timeout:3];
+      (
+        node["amenity"~"restaurant|fast_food|cafe"]["name"](around:4500,${lat},${lon});
+        way["amenity"~"restaurant|fast_food|cafe"]["name"](around:4500,${lat},${lon});
+      );
+      out center 40;
+    `;
+
+    for (let i = 0; i < mirrorEndpoints.length; i++) {
+      const endpoint = mirrorEndpoints[i];
+      const proxyWrapper = corsProxies[i % corsProxies.length];
+      const targetUrl = proxyWrapper(endpoint);
+
+      statusText = `連線節點 ${i + 1}/${mirrorEndpoints.length}`;
+      updateButtonUI();
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2800);
+
+      try {
+        const res = await fetch(targetUrl, {
+          method: "POST",
+          body: query,
+          headers: { "Accept": "application/json" },
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+
+        if (res.ok) {
+          const rawText = await res.text();
+          let data;
+          try {
+            data = JSON.parse(rawText);
+          } catch(e) {
+            continue;
+          }
+
+          const elements = (data.elements || []).filter(e => e.tags && (e.tags.name || e.tags["name:zh"]));
+          if (elements.length > 0) {
+            statusText = "抽取成功";
+            updateButtonUI();
+            return elements;
+          }
+        }
+      } catch (e) {
+        clearTimeout(timeout);
+      }
+
+      await new Promise(r => setTimeout(r, 250));
+    }
+    return [];
+  }
+
+  // 渲染真實店家與專屬直達按鈕
+  function renderRealStore(place, locationLabel) {
+    const tags = place.tags || {};
+    const storeName = tags.name || tags["name:zh"];
+    const lat = place.lat || (place.center && place.center.lat);
+    const lon = place.lon || (place.center && place.center.lon);
+
+    let address = tags["addr:street"] 
+      ? `${tags["addr:city"] || ""} ${tags["addr:street"]}${tags["addr:housenumber"] ? tags["addr:housenumber"] + "號" : ""}` 
+      : `位於 ${locationLabel} 核心街區（座標：${lat.toFixed(4)}, ${lon.toFixed(4)}）`;
+
+    const cuisine = tags.cuisine || (tags.amenity === "cafe" ? "特色咖啡館" : "在地人氣美食");
+
+    document.getElementById('tagCategory').textContent = cuisine.split(';')[0];
+    document.getElementById('tagStatus').textContent = "實體店家";
+    document.getElementById('displayStoreName').textContent = `🏪 ${storeName}`;
+    document.getElementById('displayAddress').textContent = address;
+    document.getElementById('displayHours').textContent = tags.opening_hours ? `🕒 營業時間：${tags.opening_hours}` : "🕒 營業時間：請點擊下方 Google 地圖確認即時狀態";
+    document.getElementById('displayPhone').textContent = tags.phone || tags["contact:phone"] ? `📞 電話：${tags.phone || tags["contact:phone"]}` : "📞 電話：未登記（可點擊地圖查詢）";
+
+    // 內嵌地圖定位
+    mapEmbed.src = `https://maps.google.com/maps?q=${lat},${lon}&t=&z=17&ie=UTF8&iwloc=B&output=embed`;
+
+    // 官方 Google Maps 商家頁直達
+    const targetQuery = encodeURIComponent(`${storeName}`);
+    mapDirectLink.href = `https://www.google.com/maps/search/?api=1&query=${targetQuery}&center=${lat},${lon}`;
+    mapDirectLink.textContent = `在 Google Maps 開啟【${storeName}】專屬商家檔案 ↗`;
+
+    resultBox.style.display = 'block';
+    resultBox.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  console.log(" BiteRoulette 多鏡像重試＋8秒排他鎖模組已掛載！");
+})();
+</script>
 </body>
 </html>
