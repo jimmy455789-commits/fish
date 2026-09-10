@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BiteRoulette UI ｜ 模組化介面</title>
+  <style>
+    :root {
+      --bg-main: #0a0b0e;
+      --card-bg: #14161d;
+      --card-border: #232733;
+      --accent: #f59e0b;
+      --accent-glow: rgba(245, 158, 11, 0.25);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --blue-accent: #38bdf8;
+      --green-accent: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    .glass-card {
+      width: 100%;
+      max-width: 540px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px 22px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7), 0 0 35px var(--accent-glow);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 1.6rem;
+      letter-spacing: 2px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 40%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .header p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* 4 階選單容器模組 */
+    .selector-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+      background: #0e1017;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    label span {
+      background: rgba(245, 158, 11, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+    }
+
+    select {
+      width: 100%;
+      background: #1a1e29;
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    select:focus {
+      border-color: var(--accent);
+    }
+
+    .location-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .location-toggle input {
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .btn-draw {
+      width: 100%;
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      color: #000;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+    }
+
+    .btn-draw:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-draw:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* 結果展示模組 (預設隱藏) */
+    .result-section {
+      display: none;
+      margin-top: 20px;
+      border-top: 1px solid var(--card-border);
+      padding-top: 18px;
+      animation: fadeIn 0.35s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tags-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .result-badge {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.12);
+      color: var(--accent);
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      font-weight: 600;
+    }
+
+    .badge-status {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--green-accent);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .result-query {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.4;
+    }
+
+    .info-icon {
+      color: var(--accent);
+      width: 16px;
+      text-align: center;
+    }
+
+    .map-frame-wrapper {
+      width: 100%;
+      height: 240px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+      background: #000;
+      margin-bottom: 12px;
+    }
+
+    .map-frame-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      filter: invert(90%) hue-rotate(180deg);
+    }
+
+    .btn-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .btn-launch {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      background: #1e2433;
+      color: var(--blue-accent);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .btn-launch:hover {
+      background: rgba(56, 189, 248, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+<div class="glass-card">
+  <div class="header">
+    <h1>BITEROULETTE</h1>
+    <p>今晚吃什麼？ ｜ 4 階選單介面核心</p>
+  </div>
+
+  <!-- 4 階連動選單模組 -->
+  <div class="selector-container">
+    <div class="form-group">
+      <label><span>階層 1</span> 國家 (Country)</label>
+      <select id="countrySelect"></select>
+    </div>
+
+    <div class="form-group">
+      <label><span>階層 2</span> 省 / 州 / 大區 (State / Region)</label>
+      <select id="stateSelect"></select>
+    </div>
+
+    <div class="form-group">
+      <label><span>階層 3</span> 市 / 縣 (City / County)</label>
+      <select id="citySelect"></select>
+    </div>
+
+    <div class="form-group">
+      <label><span>階層 4</span> 鄉 / 鎮 / 市 / 區 (Township / District)</label>
+      <select id="townSelect"></select>
+    </div>
+  </div>
+
+  <label class="location-toggle">
+    <input type="checkbox" id="useGps">
+    <span>略過選單，改用目前 GPS 座標定位周圍</span>
+  </label>
+
+  <button class="btn-draw" id="btnRoll">🎲 開始決定</button>
+
+  <!-- 結果展示模組 -->
+  <div class="result-section" id="resultBox">
+    <div class="tags-row">
+      <span class="result-badge" id="tagCategory">分類標籤</span>
+      <span class="result-badge badge-status" id="tagStatus">狀態標籤</span>
+    </div>
+    
+    <div class="result-query" id="displayStoreName">店家名稱預覽</div>
+
+    <div class="info-list">
+      <div class="info-item">
+        <span class="info-icon">📍</span>
+        <span id="displayAddress">店家地址</span>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">🕒</span>
+        <span id="displayHours">營業時間</span>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">📞</span>
+        <span id="displayPhone">聯絡電話</span>
+      </div>
+    </div>
+
+    <div class="map-frame-wrapper">
+      <iframe id="mapEmbed" src="" loading="lazy"></iframe>
+    </div>
+
+    <div class="btn-actions">
+      <a href="#" target="_blank" class="btn-launch" id="mapDirectLink">
+        在 Google Maps 查看完整資訊 ↗
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  /**
+   * ==========================================
+   * 模組 1：行政區域結構定義 (可獨立抽換為外部 JSON)
+   * ==========================================
+   */
+  const locationHierarchy = [
+    {
+      country: "台灣 (Taiwan)",
+      states: [
+        {
+          name: "北部地區",
+          cities: [
+            { name: "台北市", towns: ["中正區", "萬華區", "大同區", "中山區", "松山區", "大安區", "信義區", "士林區", "北投區", "內湖區", "南港區", "文山區"] },
+            { name: "新北市", towns: ["板橋區", "三重區", "中和區", "永和區", "新莊區", "新店區", "土城區", "蘆洲區", "樹林區", "汐止區", "淡水區"] },
+            { name: "基隆市", towns: ["仁愛區", "信義區", "中正區", "中山區", "安樂區", "暖暖區", "七堵區"] }
+          ]
+        },
+        {
+          name: "中部地區",
+          cities: [
+            { name: "彰化縣", towns: ["彰化市", "員林市", "和美鎮", "鹿港鎮", "溪湖鎮", "二林鎮", "田中鎮", "北斗鎮"] },
+            { name: "台中市", towns: ["中區", "東區", "南區", "西區", "北區", "西屯區", "南屯區", "北屯區", "豐原區"] }
+          ]
+        },
+        {
+          name: "南部地區",
+          cities: [
+            { name: "台南市", towns: ["中西區", "東區", "南區", "北區", "安平區", "安南區", "永康區"] },
+            { name: "高雄市", towns: ["新興區", "前金區", "苓雅區", "鹽埕區", "鼓山區", "前鎮區", "三民區", "左營區"] }
+          ]
+        }
+      ]
+    },
+    {
+      country: "日本 (Japan)",
+      states: [
+        {
+          name: "關東地方",
+          cities: [
+            { name: "東京都", towns: ["新宿區", "澀谷區", "千代田區", "中央區", "台東區", "港區"] },
+            { name: "神奈川縣", towns: ["橫濱市中區", "橫濱市西區", "川崎市", "鎌倉市"] }
+          ]
+        }
+      ]
+    }
+  ];
+
+  /**
+   * ==========================================
+   * 模組 2：DOM 控制與 4 階連動引擎
+   * ==========================================
+   */
+  const countrySelect = document.getElementById('countrySelect');
+  const stateSelect = document.getElementById('stateSelect');
+  const citySelect = document.getElementById('citySelect');
+  const townSelect = document.getElementById('townSelect');
+  const useGps = document.getElementById('useGps');
+  const btnRoll = document.getElementById('btnRoll');
+  const resultBox = document.getElementById('resultBox');
+
+  // 初始化選單
+  function initSelectorEngine() {
+    countrySelect.innerHTML = locationHierarchy.map((c, i) => `<option value="${i}">${c.country}</option>`).join('');
+    updateStates();
+  }
+
+  function updateStates() {
+    const cIdx = parseInt(countrySelect.value, 10);
+    const states = locationHierarchy[cIdx].states;
+    stateSelect.innerHTML = states.map((s, i) => `<option value="${i}">${s.name}</option>`).join('');
+    updateCities();
+  }
+
+  function updateCities() {
+    const cIdx = parseInt(countrySelect.value, 10);
+    const sIdx = parseInt(stateSelect.value, 10);
+    const cities = locationHierarchy[cIdx].states[sIdx].cities;
+    citySelect.innerHTML = cities.map((ct, i) => `<option value="${i}">${ct.name}</option>`).join('');
+    updateTowns();
+  }
+
+  function updateTowns() {
+    const cIdx = parseInt(countrySelect.value, 10);
+    const sIdx = parseInt(stateSelect.value, 10);
+    const ctIdx = parseInt(citySelect.value, 10);
+    const towns = locationHierarchy[cIdx].states[sIdx].cities[ctIdx].towns;
+    townSelect.innerHTML = towns.map(t => `<option value="${t}">${t}</option>`).join('');
+  }
+
+  countrySelect.addEventListener('change', updateStates);
+  stateSelect.addEventListener('change', updateCities);
+  citySelect.addEventListener('change', updateTowns);
+
+  /**
+   * ==========================================
+   * 模組 3：外部事件掛載與回呼 (Callback Hook)
+   * ==========================================
+   */
+  btnRoll.addEventListener('click', () => {
+    // 取得當前選定層級資訊
+    const selectedData = {
+      isGps: useGps.checked,
+      country: countrySelect.options[countrySelect.selectedIndex].text,
+      state: stateSelect.options[stateSelect.selectedIndex].text,
+      city: citySelect.options[citySelect.selectedIndex].text,
+      town: townSelect.value
+    };
+
+    onDrawButtonClick(selectedData);
+  });
+
+  // 此處為下一步即將掛載邏輯的核心函式
+  function onDrawButtonClick(locationInfo) {
+    console.log("目前選取地區：", locationInfo);
+
+    // 介面展示範例（下一步將由真實搜尋演算法接管此處）
+    document.getElementById('displayStoreName').textContent = `已鎖定：${locationInfo.city} ${locationInfo.town}`;
+    document.getElementById('displayAddress').textContent = `${locationInfo.country} › ${locationInfo.state} › ${locationInfo.city} › ${locationInfo.town}`;
+    resultBox.style.display = 'block';
+    resultBox.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // 頁面加載啟動
+  initSelectorEngine();
+</script>
+
+</body>
+</html>
