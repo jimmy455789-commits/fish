@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BiteRoulette Global ｜ 全球單店美食盲盒</title>
+  <title>BiteRoulette Global ｜ 4階精確盲盒</title>
   <style>
     :root {
       --bg-main: #0a0b0e;
@@ -14,7 +14,6 @@
       --text-main: #f3f4f6;
       --text-muted: #9ca3af;
       --blue-accent: #38bdf8;
-      --green-accent: #10b981;
     }
 
     * {
@@ -66,7 +65,7 @@
 
     .selector-grid {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 10px;
       margin-bottom: 14px;
     }
@@ -75,6 +74,10 @@
       display: flex;
       flex-direction: column;
       gap: 5px;
+    }
+
+    .form-group.full-width {
+      grid-column: span 2;
     }
 
     label {
@@ -91,7 +94,7 @@
       border: 1px solid var(--card-border);
       padding: 10px 12px;
       border-radius: 8px;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       outline: none;
       cursor: pointer;
     }
@@ -236,23 +239,28 @@
 <div class="glass-card">
   <div class="header">
     <h1>BITEROULETTE GLOBAL</h1>
-    <p>全球行政區 ｜ 300+ 料理單店盲盒</p>
+    <p>4 階精確劃分 ｜ 300+ 料理單店盲盒</p>
   </div>
 
   <div class="selector-grid">
     <div class="form-group">
-      <label>1. 國家 / 地區 (Country / Region)</label>
+      <label>1. 國家 (Country)</label>
       <select id="countrySelect"></select>
     </div>
 
     <div class="form-group">
-      <label>2. 州 / 省 / 大區 (State / Province)</label>
+      <label>2. 省 / 州 / 大區 (State)</label>
       <select id="stateSelect"></select>
     </div>
 
     <div class="form-group">
-      <label>3. 城市 / 商圈 (City / District)</label>
+      <label>3. 市 / 縣 (City / County)</label>
       <select id="citySelect"></select>
+    </div>
+
+    <div class="form-group">
+      <label>4. 鄉鎮市區 (Township)</label>
+      <select id="townSelect"></select>
     </div>
   </div>
 
@@ -283,103 +291,209 @@
 </div>
 
 <script>
-  // 全球細分行政區資料庫（國家 -> 大區/省州 -> 具體城市/商圈/鄉鎮市區）
+  // 標準 4 階層級劃分資料庫：國家 ➔ 省/州/大區 ➔ 市/縣 ➔ 鄉鎮市區/主要商圈
   const globalLocations = [
     {
       country: "台灣 (Taiwan)",
       states: [
-        { name: "北部地區", cities: ["台北市 信義區", "台北市 大安區", "台北市 中山區", "台北市 士林區", "新北市 板橋區", "新北市 中和區", "桃園市 桃園區", "桃園市 中壢區", "新竹市 東區", "基隆市 仁愛區", "宜蘭縣 羅東鎮"] },
-        { name: "中部地區", cities: ["台中市 西屯區", "台中市 西區", "台中市 北區", "台中市 南屯區", "彰化縣 彰化市", "彰化縣 員林市", "南投縣 埔里鎮", "苗栗縣 頭份市", "雲林縣 斗六市"] },
-        { name: "南部地區", cities: ["台南市 中西區", "台南市 東區", "台南市 安平區", "高雄市 左營區", "高雄市 前鎮區", "高雄市 三民區", "屏東縣 屏東市", "屏東縣 恆春鎮", "嘉義市 東區", "嘉義市 西區"] },
-        { name: "東部與離島", cities: ["花蓮縣 花蓮市", "台東縣 台東市", "宜蘭縣 礁溪鄉", "澎湖縣 馬公市", "金門縣 金城鎮"] }
+        {
+          name: "北部地區",
+          cities: [
+            { name: "台北市", towns: ["信義區", "大安區", "中山區", "中正區", "松山區", "士林區", "內湖區", "萬華區"] },
+            { name: "新北市", towns: ["板橋區", "中和區", "永和區", "新莊區", "三重區", "新店區", "淡水區", "汐止區"] },
+            { name: "桃園市", towns: ["桃園區", "中壢區", "平鎮區", "八德區", "龜山區", "蘆竹區"] },
+            { name: "新竹市", towns: ["東區", "北區", "香山區"] },
+            { name: "基隆市", towns: ["仁愛區", "中正區", "信義區", "安樂區"] },
+            { name: "宜蘭縣", towns: ["宜蘭市", "羅東鎮", "礁溪鄉", "冬山鄉", "頭城鎮"] }
+          ]
+        },
+        {
+          name: "中部地區",
+          cities: [
+            { name: "台中市", towns: ["西屯區", "西區", "北區", "南屯區", "北屯區", "中區", "豐原區", "大里區"] },
+            { name: "彰化縣", towns: ["彰化市", "員林市", "鹿港鎮", "二林鎮", "和美鎮", "溪湖鎮", "田中鎮"] },
+            { name: "南投縣", towns: ["南投市", "埔里鎮", "草屯鎮", "竹山鎮", "魚池鄉(日月潭)"] },
+            { name: "苗栗縣", towns: ["苗栗市", "頭份市", "竹南鎮", "三義鄉", "苑裡鎮"] },
+            { name: "雲林縣", towns: ["斗六市", "虎尾鎮", "西螺鎮", "北港鎮", "麥寮鄉"] }
+          ]
+        },
+        {
+          name: "南部地區",
+          cities: [
+            { name: "台南市", towns: ["中西區", "東區", "安平區", "北區", "永康區", "南區", "新營區"] },
+            { name: "高雄市", towns: ["左營區", "前鎮區", "三民區", "苓雅區", "新興區", "鼓山區", "鳳山區", "楠梓區"] },
+            { name: "屏東縣", towns: ["屏東市", "恆春鎮(墾丁)", "潮州鎮", "東港鎮", "萬巒鄉"] },
+            { name: "嘉義市", towns: ["東區", "西區"] },
+            { name: "嘉義縣", towns: ["民雄鄉", "太保市", "朴子市", "中埔鄉"] }
+          ]
+        },
+        {
+          name: "東部與離島",
+          cities: [
+            { name: "花蓮縣", towns: ["花蓮市", "吉安鄉", "新城鄉", "玉里鎮"] },
+            { name: "台東縣", towns: ["台東市", "卑南鄉", "鹿野鄉", "池上鄉"] },
+            { name: "澎湖縣", towns: ["馬公市", "湖西鄉", "白沙鄉"] },
+            { name: "金門縣", towns: ["金城鎮", "金湖鎮", "金沙鎮"] }
+          ]
+        }
       ]
     },
     {
       country: "香港 (Hong Kong)",
       states: [
-        { name: "香港島", cities: ["中環 (Central)", "銅鑼灣 (Causeway Bay)", "灣仔 (Wan Chai)", "上環 (Sheung Wan)", "西環 / 堅尼地城", "北角 / 鰂魚涌"] },
-        { name: "九龍", cities: ["尖沙咀 (Tsim Sha Tsui)", "旺角 (Mong Kok)", "深水埗 (Sham Shui Po)", "佐敦 (Jordan)", "觀塘 (Kwun Tong)", "大角咀 (Tai Kok Tsui)"] },
-        { name: "新界及離島", cities: ["沙田 (Sha Tin)", "荃灣 (Tsuen Wan)", "元朗 (Yuen Long)", "屯門 (Tuen Mun)", "西貢 (Sai Kung)", "大澳 / 東涌"] }
+        {
+          name: "香港島",
+          cities: [
+            { name: "中西區", towns: ["中環", "上環", "西營盤", "堅尼地城"] },
+            { name: "灣仔區", towns: ["灣仔", "銅鑼灣", "跑馬地"] },
+            { name: "東區", towns: ["北角", "鰂魚涌", "太古", "柴灣"] },
+            { name: "南區", towns: ["香港仔", "赤柱", "鴨脷洲"] }
+          ]
+        },
+        {
+          name: "九龍",
+          cities: [
+            { name: "油尖旺區", towns: ["尖沙咀", "旺角", "油麻地", "佐敦", "大角咀"] },
+            { name: "深水埗區", towns: ["深水埗", "長沙灣", "荔枝角"] },
+            { name: "九龍城區", towns: ["紅磡", "土瓜灣", "九龍城"] },
+            { name: "觀塘區", towns: ["觀塘", "九龍灣", "藍田"] }
+          ]
+        },
+        {
+          name: "新界及離島",
+          cities: [
+            { name: "沙田區", towns: ["沙田市中心", "大圍", "馬鞍山"] },
+            { name: "荃灣區", towns: ["荃灣市中心", "深井"] },
+            { name: "元朗區", towns: ["元朗市中心", "天水圍"] },
+            { name: "西貢區", towns: ["西貢市中心", "將軍澳"] },
+            { name: "離島區", towns: ["東涌", "大澳", "長洲"] }
+          ]
+        }
       ]
     },
     {
       country: "日本 (Japan)",
       states: [
-        { name: "關東地方", cities: ["東京都 新宿", "東京都 澀谷", "東京都 銀座", "東京都 淺草", "東京都 秋葉原", "神奈川 橫濱", "千葉 船橋"] },
-        { name: "近畿地方", cities: ["大阪 難波/道頓堀", "大阪 梅田", "京都 四條河原町", "京都 祇園", "兵庫 神戶三宮", "奈良市 中心"] },
-        { name: "北海道及東北", cities: ["札幌 薄野/中央區", "小樽 堺町", "函館 朝市", "宮城 仙台一番町"] },
-        { name: "九州及沖繩", cities: ["福岡 博多", "福岡 天神", "熊本 城下町", "沖繩 那霸國際通", "沖繩 美國村"] }
+        {
+          name: "關東地方",
+          cities: [
+            { name: "東京都", towns: ["新宿區", "澀谷區", "中央區(銀座)", "台東區(淺草)", "千代田區(秋葉原)", "豐島區(池袋)"] },
+            { name: "神奈川縣", towns: ["橫濱市中區", "橫濱市西區", "川崎市", "鎌倉市"] },
+            { name: "千葉縣", towns: ["千葉市", "船橋市", "浦安市"] }
+          ]
+        },
+        {
+          name: "近畿地方",
+          cities: [
+            { name: "大阪府", towns: ["中央區(難波/道頓堀)", "北區(梅田)", "天王寺區", "浪速區(通天閣)"] },
+            { name: "京都府", towns: ["下京區(四條河原町)", "東山區(祇園)", "中京區", "右京區(嵐山)"] },
+            { name: "兵庫縣", towns: ["神戶市中央區(三宮)", "姬路市", "西宮市"] }
+          ]
+        },
+        {
+          name: "北海道與東北",
+          cities: [
+            { name: "北海道", towns: ["札幌市中央區(薄野)", "小樽市堺町", "函館市朝市", "旭川市"] },
+            { name: "宮城縣", towns: ["仙台市青葉區", "仙台市宮城野區"] }
+          ]
+        },
+        {
+          name: "九州與沖繩",
+          cities: [
+            { name: "福岡縣", towns: ["福岡市博多區", "福岡市中央區(天神)", "北九州市"] },
+            { name: "熊本縣", towns: ["熊本市中央區", "阿蘇市"] },
+            { name: "沖繩縣", towns: ["那霸市(國際通)", "中頭郡北谷町(美國村)", "名護市"] }
+          ]
+        }
       ]
     },
     {
       country: "韓國 (South Korea)",
       states: [
-        { name: "首爾特別市", cities: ["首爾 弘大 (Hongdae)", "首爾 明洞 (Myeongdong)", "首爾 江南 (Gangnam)", "首爾 聖水洞 (Seongsu)", "首爾 鍾路/仁寺洞", "首爾 梨泰院 (Itaewon)"] },
-        { name: "釜山廣域市", cities: ["釜山 海雲臺 (Haeundae)", "釜山 西面 (Seomyeon)", "釜山 南浦洞/扎嘎其", "釜山 廣安里"] },
-        { name: "濟州道及其他", cities: ["濟州市 蓮洞", "西歸浦市", "大邱 東城路"] }
+        {
+          name: "首都圈",
+          cities: [
+            { name: "首爾特別市", towns: ["麻浦區(弘大)", "中區(明洞)", "江南區", "城東區(聖水洞)", "鍾路區", "龍山區(梨泰院)"] },
+            { name: "仁川廣域市", towns: ["中區(中國城)", "延壽區(松島)", "南洞區"] }
+          ]
+        },
+        {
+          name: "嶺南與濟州",
+          cities: [
+            { name: "釜山廣域市", towns: ["海雲臺區", "釜山鎮區(西面)", "中區(南浦洞)", "水營區(廣安里)"] },
+            { name: "濟州特別自治道", towns: ["濟州市(蓮洞)", "西歸浦市中心", "涯月邑"] }
+          ]
+        }
       ]
     },
     {
       country: "美國 (United States)",
       states: [
-        { name: "加利福尼亞州", cities: ["Los Angeles Downtown", "San Francisco Union Square", "San Jose", "San Diego Gaslamp"] },
-        { name: "紐約州", cities: ["New York Midtown", "New York Brooklyn", "New York SoHo", "New York Flushing"] },
-        { name: "華盛頓州及德州", cities: ["Seattle Pike Place", "Austin Downtown", "Houston Galleria"] }
-      ]
-    },
-    {
-      country: "歐洲 (Europe)",
-      states: [
-        { name: "英國", cities: ["London Soho", "London Covent Garden", "Edinburgh Old Town"] },
-        { name: "法國", cities: ["Paris Le Marais", "Paris Saint-Germain", "Lyon Presqu'île"] },
-        { name: "義大利", cities: ["Rome Trastevere", "Milan Duomo", "Florence Historic Centre"] }
+        {
+          name: "西岸地區",
+          cities: [
+            { name: "加利福尼亞州", towns: ["洛杉磯市中心", "舊金山聯合廣場", "聖荷西市區", "聖地牙哥瓦斯燈街區"] },
+            { name: "華盛頓州", towns: ["西雅圖派克市場", "西雅圖市中心", "貝爾維尤"] }
+          ]
+        },
+        {
+          name: "東岸與南部",
+          cities: [
+            { name: "紐約州", towns: ["曼哈頓中城", "曼哈頓蘇活區", "布魯克林威廉斯堡", "皇后區法拉盛"] },
+            { name: "德克薩斯州", towns: ["奧斯汀市中心", "休士頓商業區", "達拉斯藝術區"] }
+          ]
+        }
       ]
     },
     {
       country: "東南亞 (Southeast Asia)",
       states: [
-        { name: "泰國", cities: ["曼谷 Siam", "曼谷 Thong Lo", "清邁 古城區", "普吉島 芭東"] },
-        { name: "新加坡", cities: ["Marina Bay", "Chinatown 牛車水", "Orchard Road 烏節路"] },
-        { name: "越南", cities: ["河內 老街區", "胡志明市 第一郡", "峴港 海灘區"] }
-      ]
-    },
-    {
-      country: "澳洲 (Australia)",
-      states: [
-        { name: "新南威爾斯州", cities: ["Sydney CBD", "Sydney Chinatown", "Newtown"] },
-        { name: "維多利亞州", cities: ["Melbourne CBD", "Carlton Little Italy", "Fitzroy"] }
+        {
+          name: "中南半島",
+          cities: [
+            { name: "泰國", towns: ["曼谷(Siam暹羅)", "曼谷(Thong Lo)", "清邁(古城區)", "普吉島(芭東)"] },
+            { name: "越南", towns: ["河內(老街區)", "胡志明市(第一郡)", "峴港(海灘區)"] }
+          ]
+        },
+        {
+          name: "馬來群島",
+          cities: [
+            { name: "新加坡", towns: ["濱海灣(Marina Bay)", "牛車水(Chinatown)", "烏節路(Orchard)"] },
+            { name: "馬來西亞", towns: ["吉隆坡(武吉免登)", "檳城(喬治市)", "新山"] }
+          ]
+        }
       ]
     }
   ];
 
-  // 海量擴充至 300+ 種料理資料庫
+  // 300+ 具體料理庫
   const fullCuisineDatabase = [
-    // 台灣小吃與在地美味 (1-40)
+    // 台灣小吃與在地特色 (1-40)
     "紅燒牛肉麵", "清燉牛肉麵", "古早味滷肉飯", "火雞肉飯", "筒仔米糕", "南部花生肉粽", "彰化酥皮肉圓", "台南清蒸肉圓", "炭烤大腸包小腸", "脆皮鹽酥雞",
-    "豪大大香雞排", "蚵仔煎", "蝦仁煎", "大腸蚵仔麵線", "生炒花枝羹", "台南炒鱔魚意麵", "台南溫體牛肉湯", "虱目魚肚湯", "香菇肉羹麵", "土魠魚羹麵",
-    "廟口排骨酥麵", "切仔麵黑白切", "台南意麵乾拌", "炭燒薑母鴨", "紅蟳薑母鴨", "溪湖羊肉爐", "岡山羊肉爐", "黑麻油土雞", "九層塔三杯雞", "客家小炒",
+    "豪大大香雞排", "蚵仔煎", "蝦仁煎", "大腸蚵仔麵線", "生炒花枝羹", "炒鱔魚意麵", "台南溫體牛肉湯", "虱目魚肚湯", "香菇肉羹麵", "土魠魚羹麵",
+    "廟口排骨酥麵", "黑白切乾麵", "台南意麵乾拌", "炭燒薑母鴨", "紅蟳薑母鴨", "溪湖羊肉爐", "岡山羊肉爐", "黑麻油土雞", "九層塔三杯雞", "客家小炒",
     "梅干扣肉", "薑絲炒大腸", "宜蘭炸卜肉", "傳統糕渣", "東山鴨頭", "碳烤蜜汁玉米", "深坑麻辣臭豆腐", "清蒸紅糟肉圓", "萬巒豬腳", "台式古早味割包",
 
-    // 粵菜與港式飲茶 (41-70)
+    // 粵菜與港式點心 (41-70)
     "港式飲茶鮮蝦餃", "豉汁蒸排骨", "蜜汁叉燒包", "流沙奶黃包", "酥皮蛋塔", "鮮蝦脆皮腸粉", "燒臘雙拼飯", "脆皮燒肉", "明爐深井烤鴨", "鳳爪排骨煲仔飯",
     "乾炒牛河", "XO醬炒蘿蔔糕", "鮮蝦雲吞撈麵", "絲襪奶茶", "冰火菠蘿油", "避風塘炒蟹", "港式胡椒豬肚雞鍋", "澳門豬扒包", "窩蛋生滾牛肉粥", "生滾皮蛋瘦肉粥",
     "富貴蜜汁火腿", "廣式脆皮煎麵", "鮮蝦腐皮卷", "大排檔炒蜆", "柱侯蘿蔔牛腩煲", "西多士配雪糕", "車仔麵自選", "紅豆雙皮奶", "楊枝甘露", "沙嗲牛肉公仔麵",
 
     // 中華名菜八大菜系 (71-105)
     "正宗四川麻婆豆腐", "重慶水煮牛肉", "重慶水煮魚", "重慶辣子雞", "重慶小麵", "老成都擔擔麵", "川味麻辣香鍋", "東北酸菜白肉鍋", "東北鐵鍋燉大鵝", "湖南剁椒魚頭",
-    "毛氏紅燒肉", "湘西土匪鴨", "富貴東坡肉", "西湖醋魚", "杭州龍井蝦仁", "宋嫂魚羹", "無錫醬排骨", "揚州揚州炒飯", "金陵鹽水鴨", "正宗北京烤鴨",
+    "毛氏紅燒肉", "湘西土匪鴨", "富貴東坡肉", "西湖醋魚", "杭州龍井蝦仁", "宋嫂魚羹", "無錫醬排骨", "揚州炒飯", "金陵鹽水鴨", "正宗北京烤鴨",
     "淮揚清燉獅子頭", "淮揚三丁灌湯包", "上海生煎湯包", "江南醃篤鮮", "上海蔥油開洋拌麵", "閩南傳統佛跳牆", "五柳枝海鱸魚", "福州荔枝肉", "徽州臭鱖魚", "山東德州扒雞",
     "貴州酸湯魚", "雲南過橋米線", "陝西肉夾饃", "新疆羊肉手抓飯", "新疆孜然羊肉串",
 
     // 日式料理精粹 (106-155)
     "濃厚豚骨拉麵", "濃郁雞白湯拉麵", "東京醬油拉麵", "特濃魚介沾麵", "札幌辛味噌拉麵", "函館清爽鹽味拉麵", "博多極細長濱拉麵", "酥脆炸豬排定食", "名古屋鰻魚飯三吃", "關東風味壽喜燒",
-    "日式涮涮鍋", "極上和牛燒肉", "厚切牛舌定食", "江戶前手握壽司", "炙燒鮭魚腹丼", "北海道海膽丼", "極上生魚片刺身", "金子半之助天婦羅丼", "日式鐵板炒麵", "大阪風道頓堀燒",
+    "日式涮涮鍋", "極上和牛燒肉", "厚切牛舌定食", "江戶前手握壽司", "炙燒鮭魚腹丼", "北海道海膽丼", "極上生魚片刺身", "天婦羅海鮮丼", "日式鐵板炒麵", "大阪風道頓堀燒",
     "廣島牡蠣廣島燒", "博多明太子文字燒", "炭烤居酒屋雞肉串", "日式照燒雞腿串", "關東煮屋台料理", "日式和牛漢堡排", "鐵板滑蛋牛肉丼", "滑蛋炭火親子丼", "日式咖哩豬排飯", "日式唐揚炸雞塊",
     "讚岐手打烏龍麵", "日式蒸籠冷蕎麥麵", "鴨肉南蠻熱蕎麥麵", "鹽烤挪威鯖魚定食", "明太子鮭魚茶泡飯", "京都酥炸牛排", "烤海苔磯邊燒麻糬", "大阪章魚燒", "海鮮磯燒炭烤", "廣島炸牡蠣定食",
-    "秋田橫手炒麵", "北海道成吉思汗烤羊肉", "沖繩苦瓜炒豆腐", "日式生牛肉冷盤", "明太子茶碗蒸", "厚切三文魚丼", "日式釜飯", "博多牛腸鍋", "靜岡黑關東煮", "日式炸肉餅",
+    "秋田橫手炒麵", "北海道成吉思汗烤羊肉", "沖繩苦瓜炒豆腐", "日式生牛肉冷盤", "明太子茶碗蒸", "厚切鮭魚丼", "日式釜飯", "博多牛腸鍋", "靜岡黑關東煮", "日式炸肉餅",
 
     // 韓式經典美味 (156-190)
-    "韓式炭烤厚切五花肉", "韓式辣炒年糕", "洋釀蒜味韓式炸雞", "全州石鍋拌飯", "部隊部隊火鍋", "韓式泡菜海鮮湯", "馬鈴薯豬骨排骨湯", "韓式人蔘糯米雞湯", "海鮮蔥煎餅", "水冷麵配冰水",
+    "韓式炭烤厚切五花肉", "韓式辣炒年糕", "洋釀蒜味韓式炸雞", "全州石鍋拌飯", "部隊火鍋", "韓式泡菜海鮮湯", "馬鈴薯豬骨排骨湯", "韓式人蔘糯米雞湯", "海鮮蔥煎餅", "水冷麵配冰水",
     "春川辣炒雞排", "安東燉雞", "首爾牛骨雪濃湯", "韓式辣烤牛肉", "韓式炒雜菜冬粉", "辣炒豬肉定食", "韓式傳統血腸湯", "海鮮嫩豆腐煲", "大醬海鮮鍋", "韓式黑炸醬麵",
     "韓式海鮮炒碼麵", "釜山魚板串", "韓式糖醋肉", "熟成白切菜包肉", "麻油紫菜包飯", "辣燉白帶魚鍋", "牛肋條排骨清湯", "生拌牛肉佐梨絲", "辣牛肉冬粉湯", "辣豆腐海鮮煲",
     "忠武飯捲", "韓式烤大腸", "春川辣烤魷魚", "炭火辣味烤雞腳", "韓式冷拌冬粉",
@@ -401,12 +515,12 @@
     "希臘羊肉烤肉捲 (Gyros)", "希臘檸檬烤羊排", "希臘慕薩卡焗烤茄子", "地中海嫩煎鱸魚", "西西里香炸飯糰", "義式海鮮番茄湯", "羅馬脆皮烤乳豬", "米蘭燉牛膝", "帕芙洛娃薄餅", "義式巴薩米克醋鴨胸",
 
     // 法、德、英、歐陸經典 (286-310)
-    "法式勃根地紅酒燉牛肉", "法式油封鴨腿", "法式焗烤洋蔥湯", "普羅旺斯燉菜", "法式法式烤田螺", "庫克太太起司流心三明治", "英式酥炸魚薯條", "英式威靈頓牛排", "英式牧羊人派", "德國酥脆烤豬腳",
+    "法式勃根地紅酒燉牛肉", "法式油封鴨腿", "法式焗烤洋蔥湯", "普羅旺斯燉菜", "法式烤田螺", "庫克太太起司流心三明治", "英式酥炸魚薯條", "英式威靈頓牛排", "英式牧羊人派", "德國酥脆烤豬腳",
     "德國白香腸酸菜拼盤", "維也納酥炸牛排", "匈牙利慢燉牛肉湯", "俄式羅宋湯配酸奶油", "俄式酸奶燉牛肉", "瑞士融化起司火鍋", "比利時白酒淡菜鍋", "瑞典肉丸佐越橘醬", "波蘭手工餃子", "愛爾蘭黑啤酒燉羊肉",
     "法式嫩煎鴨肝", "法式洛林鹹派", "法式普羅旺斯烤春雞", "里昂經典水波蛋沙拉", "法式可麗餅佐橙酒"
   ];
 
-  // 強化單店錨定模式（驅使 Google Maps 鎖定單一專門店）
+  // 強化單店錨定模式
   const singleStorePickModes = [
     { mode: "老饕專門店", affix: "專門店 必吃", desc: "鎖定當地名聲響亮的指標專門店！" },
     { mode: "巷弄私房", affix: "隱藏版 私房推薦", desc: "鎖定巷子裡低調卻驚豔的道地小館！" },
@@ -416,9 +530,12 @@
 
   let activeFoodPool = [...fullCuisineDatabase];
 
+  // 4 階 DOM 元素綁定
   const countrySelect = document.getElementById('countrySelect');
   const stateSelect = document.getElementById('stateSelect');
   const citySelect = document.getElementById('citySelect');
+  const townSelect = document.getElementById('townSelect');
+
   const useGps = document.getElementById('useGps');
   const btnRoll = document.getElementById('btnRoll');
   const resultBox = document.getElementById('resultBox');
@@ -430,6 +547,7 @@
   const mapEmbed = document.getElementById('mapEmbed');
   const mapDirectLink = document.getElementById('mapDirectLink');
 
+  // 初始化 4 階聯動選單
   function initSelectors() {
     countrySelect.innerHTML = globalLocations.map((item, idx) => 
       `<option value="${idx}">${item.country}</option>`
@@ -450,14 +568,27 @@
     const cIdx = parseInt(countrySelect.value, 10);
     const sIdx = parseInt(stateSelect.value, 10);
     const cities = globalLocations[cIdx].states[sIdx].cities;
-    citySelect.innerHTML = cities.map(city => 
-      `<option value="${city}">${city}</option>`
+    citySelect.innerHTML = cities.map((item, idx) => 
+      `<option value="${idx}">${item.name}</option>`
+    ).join('');
+    updateTowns();
+  }
+
+  function updateTowns() {
+    const cIdx = parseInt(countrySelect.value, 10);
+    const sIdx = parseInt(stateSelect.value, 10);
+    const ctIdx = parseInt(citySelect.value, 10);
+    const towns = globalLocations[cIdx].states[sIdx].cities[ctIdx].towns;
+    townSelect.innerHTML = towns.map(town => 
+      `<option value="${town}">${town}</option>`
     ).join('');
   }
 
   countrySelect.addEventListener('change', updateStates);
   stateSelect.addEventListener('change', updateCities);
+  citySelect.addEventListener('change', updateTowns);
 
+  // 抽籤邏輯
   btnRoll.addEventListener('click', () => {
     btnRoll.textContent = "全網鎖定單店中...";
     btnRoll.disabled = true;
@@ -492,10 +623,11 @@
   function getSelectedLocationName() {
     const cName = countrySelect.options[countrySelect.selectedIndex].text;
     const sName = stateSelect.options[stateSelect.selectedIndex].text;
-    const cityName = citySelect.value;
+    const ctName = citySelect.options[citySelect.selectedIndex].text;
+    const tName = townSelect.value;
     return {
-      queryText: `${cityName}`,
-      labelText: `${cName.split(' ')[0]} › ${sName} › ${cityName}`
+      queryText: `${ctName} ${tName}`,
+      labelText: `${cName.split(' ')[0]} › ${sName} › ${ctName} › ${tName}`
     };
   }
 
@@ -506,8 +638,7 @@
     displayTitle.textContent = `🎯 鎖定這家：${dish}`;
     displaySub.textContent = `${mode.desc} 系統已定位鎖定專門料理店鋪。`;
 
-    // 關鍵單店鎖定技術：
-    // 使用精確的專門店名稱與高縮放比（z=17），迫使 Google Maps 直接跳出單一店家卡片，而非一整條推薦清單
+    // 縮小到鄉鎮層級 + 專門店關鍵詞 + 高縮放 (z=17)，迫使 Google 地圖直接彈出單一店家卡片
     let targetStoreQuery = isCoords 
       ? `${dish} ${mode.affix}` 
       : `${locationQuery} ${dish} ${mode.affix}`;
