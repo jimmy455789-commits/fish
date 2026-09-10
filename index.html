@@ -1247,7 +1247,7 @@
 })();
 </script>
 <!-- ======================================================== -->
-<!-- 修正版：徹底修復跨區坐標錯置 ＋ Google Maps 單店鎖定直連 -->
+<!-- 修正版：台港國家強隔離 ＋ GPS 互斥 ＋ Google Maps 單店面板 -->
 <!-- ======================================================== -->
 <style>
   .btn-spinner {
@@ -1279,7 +1279,6 @@
   const oldBtn = document.getElementById('btnRoll');
   if (!oldBtn) return;
 
-  // 深度克隆並替換按鈕，清空舊監聽器
   const btnRoll = oldBtn.cloneNode(true);
   oldBtn.parentNode.replaceChild(btnRoll, oldBtn);
   window.onDrawButtonClick = null;
@@ -1296,16 +1295,33 @@
   const tSel = document.getElementById('townSelect');
   const gpsCheck = document.getElementById('useGps');
 
-  // 台港全境完整坐標映射庫（徹底根除「跳香港出彰化」的兜底 bug）
-  const fullGeoMap = {
-    // 香港 18 區及代表市鎮
-    "香港": [22.3193, 114.1694],
-    "香港島": [22.2783, 114.1747], "中西區": [22.2821, 114.1581], "中環": [22.2819, 114.1581], "上環": [22.2868, 114.1501], "西營盤": [22.2863, 114.1416], "堅尼地城": [22.2812, 114.1287], "灣仔區": [22.2796, 114.1716], "灣仔": [22.2770, 114.1760], "銅鑼灣": [22.2800, 114.1850], "東區": [22.2841, 114.2241], "北角": [22.2912, 114.1994], "鰂魚涌": [22.2858, 114.2134], "柴灣": [22.2641, 114.2365], "南區": [22.2472, 114.1588], "香港仔": [22.2479, 114.1557], "赤柱": [22.2192, 114.2141],
-    "九龍半島": [22.3204, 114.1726], "油尖旺區": [22.3128, 114.1708], "尖沙咀": [22.2988, 114.1722], "旺角": [22.3193, 114.1694], "油麻地": [22.3117, 114.1706], "佐敦": [22.3049, 114.1717], "深水埗區": [22.3307, 114.1622], "深水埗": [22.3307, 114.1622], "長沙灣": [22.3353, 114.1565], "荔枝角": [22.3375, 114.1488], "九龍城區": [22.3282, 114.1916], "紅磡": [22.3039, 114.1878], "黃大仙區": [22.3421, 114.1932], "觀塘區": [22.3132, 114.2258], "觀塘": [22.3132, 114.2258],
-    "新界及離島": [22.3833, 114.1833], "荃灣區": [22.3713, 114.1141], "荃灣市中心": [22.3713, 114.1141], "葵青區": [22.3549, 114.1261], "葵芳": [22.3570, 114.1278], "屯門區": [22.3916, 113.9766], "屯門市中心": [22.3916, 113.9766], "元朗區": [22.4456, 114.0222], "元朗市中心": [22.4456, 114.0222], "天水圍": [22.4586, 114.0041], "北區": [22.4947, 114.1381], "上水": [22.5020, 114.1287], "粉嶺": [22.4925, 114.1396], "大埔區": [22.4508, 114.1642], "大埔市中心": [22.4508, 114.1642], "沙田區": [22.3814, 114.1878], "沙田市中心": [22.3814, 114.1878], "西貢區": [22.3814, 114.2705], "將軍澳市中心": [22.3080, 114.2600], "離島區": [22.2611, 113.9460], "東涌": [22.2878, 113.9427],
+  // 若使用者手動變更選單，自動取消 GPS，防止定位干擾
+  [cSel, sSel, ctSel, tSel].forEach(el => {
+    if (el) {
+      el.addEventListener('change', () => {
+        if (gpsCheck) gpsCheck.checked = false;
+      });
+    }
+  });
 
-    // 台灣全境
-    "台灣": [23.9756, 120.9738],
+  // 香港專屬坐標庫（嚴格隔離，絕不連往台灣任何坐標）
+  const hkGeoMap = {
+    "香港島": [22.2783, 114.1747], "中西區": [22.2821, 114.1581], "中環": [22.2819, 114.1581], "上環": [22.2868, 114.1501], "西營盤": [22.2863, 114.1416], "堅尼地城": [22.2812, 114.1287],
+    "灣仔區": [22.2796, 114.1716], "灣仔": [22.2770, 114.1760], "銅鑼灣": [22.2800, 114.1850], "跑馬地": [22.2704, 114.1853],
+    "東區": [22.2841, 114.2241], "北角": [22.2912, 114.1994], "鰂魚涌": [22.2858, 114.2134], "太古城": [22.2860, 114.2170], "筲箕灣": [22.2793, 114.2274], "柴灣": [22.2641, 114.2365],
+    "南區": [22.2472, 114.1588], "香港仔": [22.2479, 114.1557], "鴨脷洲": [22.2437, 114.1528], "赤柱": [22.2192, 114.2141],
+    "九龍半島": [22.3204, 114.1726], "油尖旺區": [22.3128, 114.1708], "尖沙咀": [22.2988, 114.1722], "尖東": [22.2980, 114.1770], "佐敦": [22.3049, 114.1717], "油麻地": [22.3117, 114.1706], "旺角": [22.3193, 114.1694], "太子": [22.3245, 114.1685],
+    "深水埗區": [22.3307, 114.1622], "深水埗": [22.3307, 114.1622], "長沙灣": [22.3353, 114.1565], "荔枝角": [22.3375, 114.1488], "美孚": [22.3364, 114.1408],
+    "九龍城區": [22.3282, 114.1916], "紅磡": [22.3039, 114.1878], "土瓜灣": [22.3175, 114.1888], "九龍城": [22.3290, 114.1910], "黃大仙區": [22.3421, 114.1932], "觀塘區": [22.3132, 114.2258], "觀塘": [22.3132, 114.2258],
+    "新界及離島": [22.3833, 114.1833], "荃灣區": [22.3713, 114.1141], "荃灣市中心": [22.3713, 114.1141], "深井": [22.3670, 114.0570], "葵青區": [22.3549, 114.1261], "葵芳": [22.3570, 114.1278], "青衣": [22.3550, 114.1030],
+    "屯門區": [22.3916, 113.9766], "屯門市中心": [22.3916, 113.9766], "元朗區": [22.4456, 114.0222], "元朗市中心": [22.4456, 114.0222], "天水圍": [22.4586, 114.0041],
+    "北區": [22.4947, 114.1381], "上水": [22.5020, 114.1287], "粉嶺": [22.4925, 114.1396], "大埔區": [22.4508, 114.1642], "大埔市中心": [22.4508, 114.1642],
+    "沙田區": [22.3814, 114.1878], "沙田市中心": [22.3814, 114.1878], "大圍": [22.3730, 114.1780], "馬鞍山": [22.4240, 114.2320],
+    "西貢區": [22.3814, 114.2705], "西貢市中心": [22.3814, 114.2705], "將軍澳市中心": [22.3080, 114.2600], "離島區": [22.2611, 113.9460], "東涌": [22.2878, 113.9427], "長洲": [22.2070, 114.0290]
+  };
+
+  // 台灣專屬坐標庫
+  const twGeoMap = {
     "台北市": [25.0330, 121.5654], "新北市": [25.0169, 121.4627], "基隆市": [25.1276, 121.7391],
     "桃園市": [24.9936, 121.3009], "新竹市": [24.8138, 120.9674], "新竹縣": [24.8387, 121.0177],
     "苗栗縣": [24.5601, 120.8214], "台中市": [24.1477, 120.6736], "彰化縣": [24.0518, 120.5161],
@@ -1336,10 +1352,10 @@
 
     startCooldown(8);
 
-    const country = (cSel && cSel.selectedIndex >= 0) ? cSel.options[cSel.selectedIndex].text.split(' ')[0] : "台灣";
-    const state = (sSel && sSel.selectedIndex >= 0) ? sSel.options[sSel.selectedIndex].text.trim() : "";
-    const city = (ctSel && ctSel.selectedIndex >= 0) ? ctSel.options[ctSel.selectedIndex].text.trim() : "";
-    const town = (tSel && tSel.selectedIndex >= 0) ? tSel.options[tSel.selectedIndex].text.trim() : "";
+    const countryText = (cSel && cSel.selectedIndex >= 0) ? cSel.options[cSel.selectedIndex].text : "台灣";
+    const stateText = (sSel && sSel.selectedIndex >= 0) ? sSel.options[sSel.selectedIndex].text.trim() : "";
+    const cityText = (ctSel && ctSel.selectedIndex >= 0) ? ctSel.options[ctSel.selectedIndex].text.trim() : "";
+    const townText = (tSel && tSel.selectedIndex >= 0) ? tSel.options[tSel.selectedIndex].text.trim() : "";
     const isGps = gpsCheck ? gpsCheck.checked : false;
 
     try {
@@ -1353,18 +1369,23 @@
         lon = pos.coords.longitude;
         locationLabel = "目前 GPS 定位周遭";
       } else {
-        locationLabel = `${country} › ${city} › ${town}`;
-        // 階層式比對坐標：鄉鎮 -> 縣市 -> 地區 -> 國家（絕不再落入錯誤預設值）
-        const resolvedCoords = fullGeoMap[town] || fullGeoMap[city] || fullGeoMap[state] || fullGeoMap[country];
-        if (resolvedCoords) {
-          lat = resolvedCoords[0];
-          lon = resolvedCoords[1];
+        locationLabel = `${countryText.split(' ')[0]} › ${cityText} › ${townText}`;
+
+        // 國家級嚴格隔離判定
+        if (countryText.includes("香港") || countryText.includes("Hong Kong")) {
+          // 只在香港資料庫查找
+          const hkCoord = hkGeoMap[townText] || hkGeoMap[cityText] || hkGeoMap[stateText] || [22.3193, 114.1694];
+          lat = hkCoord[0];
+          lon = hkCoord[1];
         } else {
-          // 若為香港但細項沒對上，強制定位九龍旺角，絕不回彰化
-          lat = country.includes("香港") ? 22.3193 : 24.0518;
-          lon = country.includes("香港") ? 114.1694 : 120.5161;
+          // 台灣資料庫查找
+          const twCoord = twGeoMap[townText] || twGeoMap[cityText] || twGeoMap[stateText] || [24.0518, 120.5161];
+          lat = twCoord[0];
+          lon = twCoord[1];
         }
       }
+
+      console.log(`[鎖定經緯度] 國家: ${countryText}, 坐標: ${lat}, ${lon}`);
 
       const stores = await fetchWithSmartMirrors(lat, lon);
 
@@ -1480,11 +1501,10 @@
     // 1. 內嵌 Google 地圖定位該店坐標
     mapEmbed.src = `https://maps.google.com/maps?q=${lat},${lon}&t=&z=17&ie=UTF8&iwloc=B&output=embed`;
 
-    // 2. 關鍵修正：使用 Google Maps 標準單店錨定格式
-    // 格式：https://www.google.com/maps/search/?api=1&query=店名+地址
-    // 當 query 包含明確的「店名」與「精確坐標/地址」時，Google Maps 會直接進入該店的官方商家檔案面板（Place Card）
-    const cleanSearch = encodeURIComponent(`${storeName} ${address}`);
-    mapDirectLink.href = `https://www.google.com/maps/search/?api=1&query=${cleanSearch}`;
+    // 2. 官方單一店家精確直達格式：直接帶入店家坐標與店名
+    // 格式：https://www.google.com/maps/search/?api=1&query=店名+lat,lon
+    const directSearch = encodeURIComponent(`${storeName} ${lat},${lon}`);
+    mapDirectLink.href = `https://www.google.com/maps/search/?api=1&query=${directSearch}`;
     mapDirectLink.textContent = `在 Google Maps 開啟【${storeName}】專屬商家檔案 ↗`;
 
     resultBox.style.display = 'block';
