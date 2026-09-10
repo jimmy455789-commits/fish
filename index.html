@@ -500,6 +500,120 @@
 
   initSelectorEngine();
 </script>
+<!-- ========================================== -->
+<!-- 獨立外掛模組：Google Maps 引擎與地圖聯動插件 -->
+<!-- 使用方式：直接貼在 index.html 最下方即可生效 -->
+<!-- ========================================== -->
+<script>
+(function() {
+  // 自動綁定畫面現有元件
+  const mapEmbed = document.getElementById('mapEmbed');
+  const mapDirectLink = document.getElementById('mapDirectLink');
+  const btnRoll = document.getElementById('btnRoll');
+  const resultBox = document.getElementById('resultBox');
+  const useGps = document.getElementById('useGps');
 
+  if (!btnRoll) {
+    console.error("找不到 #btnRoll 按鈕，外掛模組未能掛載");
+    return;
+  }
+
+  // 攔截並覆寫抽籤回呼函式 (Hooking)
+  window.onDrawButtonClick = function(locationInfo) {
+    btnRoll.disabled = true;
+    btnRoll.textContent = "🗺️ 正在定位地圖並檢索...";
+
+    if (locationInfo.isGps && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          renderCoordsMap(pos.coords.latitude, pos.coords.longitude);
+        },
+        (err) => {
+          console.warn("GPS 存取失敗或遭拒，切換回選單行政區");
+          renderTextMap(locationInfo);
+        },
+        { timeout: 6000 }
+      );
+    } else {
+      renderTextMap(locationInfo);
+    }
+  };
+
+  // 透過行政區階層渲染 Google Maps
+  function renderTextMap(info) {
+    const cleanCountry = (info.country || "").split(' ')[0];
+    const fullLocation = `${cleanCountry} ${info.city} ${info.town}`.trim();
+    const queryTarget = `${info.city} ${info.town} 美食`;
+    const encoded = encodeURIComponent(queryTarget);
+
+    // 1. 更新卡片資訊
+    const storeTitle = document.getElementById('displayStoreName');
+    const storeAddr = document.getElementById('displayAddress');
+    const storeHours = document.getElementById('displayHours');
+    const storePhone = document.getElementById('displayPhone');
+    const tagCat = document.getElementById('tagCategory');
+    const tagStat = document.getElementById('tagStatus');
+
+    if (tagCat) tagCat.textContent = "Google 地圖推薦";
+    if (tagStat) tagStat.textContent = "已連線街區";
+    if (storeTitle) storeTitle.textContent = `📍 已鎖定：${info.city} ${info.town}`;
+    if (storeAddr) storeAddr.textContent = `${info.country} › ${info.state} › ${info.city} › ${info.town}`;
+    if (storeHours) storeHours.textContent = "即時營業狀態請透過下方地圖一鍵確認";
+    if (storePhone) storePhone.textContent = "支援 Google 地圖即時導航與評價查看";
+
+    // 2. 嵌入地圖並設定直達連結
+    if (mapEmbed) {
+      mapEmbed.src = `https://maps.google.com/maps?q=${encoded}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    }
+    if (mapDirectLink) {
+      mapDirectLink.href = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
+      mapDirectLink.textContent = `在 Google Maps 查看 ${info.town} 熱門美食與導航 ↗`;
+    }
+
+    displayResultUI();
+  }
+
+  // 透過 GPS 座標渲染 Google Maps
+  function renderCoordsMap(lat, lon) {
+    const coordString = `${lat},${lon}`;
+    const encoded = encodeURIComponent(coordString);
+
+    const storeTitle = document.getElementById('displayStoreName');
+    const storeAddr = document.getElementById('displayAddress');
+    const storeHours = document.getElementById('displayHours');
+    const storePhone = document.getElementById('displayPhone');
+    const tagCat = document.getElementById('tagCategory');
+    const tagStat = document.getElementById('tagStatus');
+
+    if (tagCat) tagCat.textContent = "目前定位";
+    if (tagStat) tagStat.textContent = "GPS 連線";
+    if (storeTitle) storeTitle.textContent = "📍 目前所在位置周邊美食";
+    if (storeAddr) storeAddr.textContent = `中心座標：${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+    if (storeHours) storeHours.textContent = "已自動搜尋周遭 1.5 公里內之熱門店家";
+    if (storePhone) storePhone.textContent = "直接串接手機 Google Maps App 路線導航";
+
+    if (mapEmbed) {
+      mapEmbed.src = `https://maps.google.com/maps?q=${lat},${lon}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
+    }
+    if (mapDirectLink) {
+      mapDirectLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("美食")}&center=${encoded}`;
+      mapDirectLink.textContent = "開啟 Google Maps 查看身邊店家推薦 ↗";
+    }
+
+    displayResultUI();
+  }
+
+  function displayResultUI() {
+    if (resultBox) {
+      resultBox.style.display = 'block';
+      resultBox.scrollIntoView({ behavior: 'smooth' });
+    }
+    btnRoll.disabled = false;
+    btnRoll.textContent = "🎲 重新定位抽籤";
+  }
+
+  console.log(" Google Maps 獨立外掛模組載入完成");
+})();
+</script>
 </body>
 </html>
