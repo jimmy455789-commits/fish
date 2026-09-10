@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BiteRoulette Global ｜ 隨機美食盲盒</title>
+  <title>BiteRoulette ｜ 真實店家盲盒 (OSM 版)</title>
   <style>
     :root {
       --bg-main: #0a0b0e;
@@ -14,6 +14,7 @@
       --text-main: #f3f4f6;
       --text-muted: #9ca3af;
       --blue-accent: #38bdf8;
+      --green-accent: #10b981;
     }
 
     * {
@@ -35,7 +36,7 @@
 
     .glass-card {
       width: 100%;
-      max-width: 520px;
+      max-width: 500px;
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 20px;
@@ -63,24 +64,17 @@
       color: var(--text-muted);
     }
 
-    .selector-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
+    .form-group {
       margin-bottom: 14px;
     }
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
     label {
+      display: block;
       font-size: 0.75rem;
       font-weight: 600;
       color: var(--text-muted);
       letter-spacing: 0.5px;
+      margin-bottom: 6px;
     }
 
     select {
@@ -93,10 +87,6 @@
       font-size: 0.9rem;
       outline: none;
       cursor: pointer;
-    }
-
-    select:focus {
-      border-color: var(--accent);
     }
 
     .location-toggle {
@@ -136,6 +126,7 @@
     .btn-draw:disabled {
       opacity: 0.6;
       cursor: not-allowed;
+      transform: none;
     }
 
     .result-section {
@@ -169,40 +160,49 @@
       font-weight: 600;
     }
 
-    .modifier-badge {
-      background: rgba(56, 189, 248, 0.12);
-      color: var(--blue-accent);
-      border-color: rgba(56, 189, 248, 0.3);
+    .badge-open {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--green-accent);
+      border-color: rgba(16, 185, 129, 0.3);
     }
 
-    .result-query {
-      font-size: 1.25rem;
+    .restaurant-title {
+      font-size: 1.35rem;
       font-weight: 700;
       color: #fff;
-      margin-bottom: 4px;
+      margin-bottom: 10px;
     }
 
-    .result-location {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-    }
-
-    .result-desc {
+    .info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
       font-size: 0.85rem;
-      color: #d1d5db;
+      color: var(--text-muted);
       margin-bottom: 14px;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
       line-height: 1.4;
+    }
+
+    .info-icon {
+      color: var(--accent);
+      width: 16px;
+      text-align: center;
     }
 
     .map-frame-wrapper {
       width: 100%;
-      height: 250px;
+      height: 230px;
       border-radius: 12px;
       overflow: hidden;
       border: 1px solid var(--card-border);
       background: #000;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     .map-frame-wrapper iframe {
@@ -212,21 +212,41 @@
       filter: invert(90%) hue-rotate(180deg);
     }
 
-    .btn-launch {
+    .btn-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn-link {
       display: block;
       text-align: center;
       text-decoration: none;
+      padding: 11px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-google {
       background: #1e2433;
       color: var(--blue-accent);
       border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 0.9rem;
-      font-weight: 600;
     }
 
-    .btn-launch:hover {
+    .btn-google:hover {
       background: rgba(56, 189, 248, 0.15);
+    }
+
+    .btn-website {
+      background: #1a2520;
+      color: var(--green-accent);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-website:hover {
+      background: rgba(16, 185, 129, 0.15);
     }
   </style>
 </head>
@@ -234,250 +254,251 @@
 
 <div class="glass-card">
   <div class="header">
-    <h1>BITEROULETTE GLOBAL</h1>
-    <p>深度隨機 ｜ 打破常規推薦的美食盲盒</p>
+    <h1>BITEROULETTE</h1>
+    <p>即時連線真實店家盲盒（免 API Key 版）</p>
   </div>
 
-  <div class="selector-grid">
-    <div class="form-group">
-      <label>1. 國家 / 地區</label>
-      <select id="countrySelect"></select>
-    </div>
-
-    <div class="form-group">
-      <label>2. 州 / 省 / 大區</label>
-      <select id="stateSelect"></select>
-    </div>
-
-    <div class="form-group">
-      <label>3. 城市 / 商圈</label>
-      <select id="citySelect"></select>
-    </div>
+  <div class="form-group">
+    <label>選擇行政區</label>
+    <select id="districtSelect">
+      <option value="信義區" data-city="臺北市">台北市 - 信義區</option>
+      <option value="大安區" data-city="臺北市">台北市 - 大安區</option>
+      <option value="中山區" data-city="臺北市">台北市 - 中山區</option>
+      <option value="板橋區" data-city="新北市">新北市 - 板橋區</option>
+      <option value="西屯區" data-city="臺中市">台中市 - 西屯區</option>
+      <option value="西區" data-city="臺中市">台中市 - 西區</option>
+      <option value="中西區" data-city="臺南市">台南市 - 中西區</option>
+      <option value="前鎮區" data-city="高雄市">高雄市 - 前鎮區</option>
+      <option value="左營區" data-city="高雄市">高雄市 - 左營區</option>
+      <option value="彰化市" data-city="彰化縣">彰化縣 - 彰化市</option>
+      <option value="東區" data-city="新竹市">新竹市 - 東區</option>
+    </select>
   </div>
 
   <label class="location-toggle">
     <input type="checkbox" id="useGps">
-    <span>略過選單，優先使用目前 GPS 座標定位</span>
+    <span>略過選單，搜尋身邊 1.5 公里內的真實店家</span>
   </label>
 
-  <button class="btn-draw" id="btnRoll">🎲 深度隨機抽籤</button>
+  <button class="btn-draw" id="btnRoll">🎲 即時抽取真實店家</button>
 
   <div class="result-section" id="resultBox">
     <div class="tags-row">
-      <span class="result-badge" id="tagCategory">料理型態</span>
-      <span class="result-badge modifier-badge" id="tagModifier">探索情境</span>
+      <span class="result-badge" id="resCuisine">特色料理</span>
+      <span class="result-badge badge-open" id="resStatus">營業資訊</span>
     </div>
-    <div class="result-location" id="displayLocation">--</div>
-    <div class="result-query" id="displayTitle">--</div>
-    <div class="result-desc" id="displaySub">--</div>
+    
+    <div class="restaurant-title" id="resName">--</div>
+
+    <div class="info-list">
+      <div class="info-item">
+        <span class="info-icon">📍</span>
+        <span id="resAddress">地址查詢中...</span>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">🕒</span>
+        <span id="resHours">未提供營業時間</span>
+      </div>
+      <div class="info-item">
+        <span class="info-icon">📞</span>
+        <span id="resPhone">無登記電話</span>
+      </div>
+    </div>
 
     <div class="map-frame-wrapper">
       <iframe id="mapEmbed" src="" loading="lazy"></iframe>
     </div>
 
-    <a href="#" target="_blank" class="btn-launch" id="mapDirectLink">
-      在 Google Maps 查看這批店家的評價與位置 ↗
-    </a>
+    <div class="btn-actions">
+      <a href="#" target="_blank" class="btn-link btn-google" id="googleMapLink">
+        Google 評分與導航 ↗
+      </a>
+      <a href="#" target="_blank" class="btn-link btn-website" id="websiteLink" style="display: none;">
+        店家官網 / 粉專 ↗
+      </a>
+    </div>
   </div>
 </div>
 
 <script>
-  const globalLocations = [
-    {
-      country: "台灣 (Taiwan)",
-      states: [
-        { name: "北部地區", cities: ["台北市 信義區", "台北市 大安區", "台北市 中山區", "新北市 板橋區", "新竹市 東區", "桃園市 桃園區", "基隆市 仁愛區"] },
-        { name: "中部地區", cities: ["台中市 西屯區", "台中市 西區", "台中市 北區", "彰化縣 彰化市", "南投縣 埔里鎮", "苗栗縣 三義鄉"] },
-        { name: "南部地區", cities: ["台南市 中西區", "台南市 安平區", "高雄市 前鎮區", "高雄市 左營區", "屏東縣 恆春鎮", "嘉義市 東區"] },
-        { name: "東部與離島", cities: ["花蓮縣 花蓮市", "台東縣 台東市", "宜蘭縣 礁溪鄉", "澎湖縣 馬公市", "金門縣 金城鎮"] }
-      ]
-    },
-    {
-      country: "香港 (Hong Kong)",
-      states: [
-        { name: "香港島", cities: ["中環", "銅鑼灣", "灣仔", "上環", "堅尼地城", "北角"] },
-        { name: "九龍", cities: ["尖沙咀", "旺角", "深水埗", "佐敦", "觀塘", "大角咀"] },
-        { name: "新界及離島", cities: ["沙田", "荃灣", "元朗", "屯門", "西貢", "大澳"] }
-      ]
-    },
-    {
-      country: "日本 (Japan)",
-      states: [
-        { name: "關東地方", cities: ["東京都 新宿", "東京都 澀谷", "東京都 銀座", "東京都 淺草", "東京都 秋葉原", "神奈川 橫濱"] },
-        { name: "近畿地方", cities: ["大阪 難波", "大阪 梅田", "京都 祇園", "京都 河原町", "神戶 三宮"] },
-        { name: "北海道", cities: ["札幌 薄野", "小樽 堺町", "函館 朝市"] },
-        { name: "九州及沖繩", cities: ["福岡 博多", "福岡 天神", "熊本 城下町", "沖繩 那霸國際通"] }
-      ]
-    },
-    {
-      country: "韓國 (South Korea)",
-      states: [
-        { name: "首爾特別市", cities: ["首爾 弘大", "首爾 明洞", "首爾 江南", "首爾 聖水洞", "首爾 鍾路"] },
-        { name: "釜山與濟州", cities: ["釜山 海雲臺", "釜山 西面", "濟州市 蓮洞"] }
-      ]
-    },
-    {
-      country: "美國 (United States)",
-      states: [
-        { name: "加利福尼亞州", cities: ["Los Angeles", "San Francisco", "San Jose", "San Diego"] },
-        { name: "紐約州", cities: ["New York Manhattan", "New York Brooklyn", "New York Queens"] }
-      ]
-    },
-    {
-      country: "東南亞 (Southeast Asia)",
-      states: [
-        { name: "泰國", cities: ["曼谷 Siam", "曼谷 Thong Lo", "清邁 古城"] },
-        { name: "新加坡", cities: ["Marina Bay", "Chinatown 牛車水", "Bugis 武吉士"] }
-      ]
-    }
-  ];
+  // 快取以避免重複對同一個區域發送高頻請求
+  const cache = {};
 
-  // 擴充至 35+ 種細分料理池
-  const masterFoodPool = [
-    { title: "炭火極致・鹽烤串燒與居酒屋", tag: "炭烤小酌", baseKeyword: "居酒屋 串燒 炭火", desc: "焦香雞皮、手打肉丸與下酒菜，適合想卸下一整天防備的微醺之夜。" },
-    { title: "重度成癮・辛香濃郁香料咖哩", tag: "香料咖哩", baseKeyword: "香料咖哩 熟成咖哩", desc: "不是甜口調理包，而是充滿小茴香、薑黃與慢火熬煮肉醬的重度香料爆發。" },
-    { title: "深夜鑊氣・在地大火熱炒合菜", tag: "大火熱炒", baseKeyword: "快炒 熱炒 大排檔", desc: "蔥爆肉絲、炒蛤蜊與四季豆，鑊氣直衝腦門的極致下飯選擇。" },
-    { title: "慢火熬骨・職人系豚骨 / 雞白湯拉麵", tag: "日系麵食", baseKeyword: "拉麵 雞白湯 豚骨", desc: "濃稠乳化湯頭附著在硬麵上，搭配現炙叉燒與溏心蛋的純粹療癒。" },
-    { title: "大口吃肉・厚切原塊牛排 / 炭烤排餐", tag: "美式排餐", baseKeyword: "牛排 排餐 steak", desc: "外層焦脆、切開粉嫩多汁，大塊肉質配上海鹽與蒜片的高蛋白犒賞。" },
-    { title: "現點現煎・多汁起司手打漢堡", tag: "手作漢堡", baseKeyword: "漢堡 craft burger 美式餐廳", desc: "焦脆培根、流心起司與肉汁滿溢的手打牛肉排，隨性又暴力的美味。" },
-    { title: "滾燙冒泡・個人獨享石頭火鍋 / 麻辣鍋", tag: "鍋物暖湯", baseKeyword: "個人火鍋 麻辣鍋 石頭火鍋", desc: "先炒後煮的蒜香油蔥鍋底，隨心所欲涮牛肉片與時蔬的滿足感。" },
-    { title: "傳統底蘊・數十年老麵店 / 滷味切盤", tag: "在地老店", baseKeyword: "古早味 麵店 黑白切 滷味", desc: "特調乾拌麵醬汁、骨仔肉湯與切得滿滿一盤的精華滷味。" },
-    { title: "香酥多汁・極脆韓式炸雞配醃蘿蔔", tag: "韓式料理", baseKeyword: "韓式炸雞 韓式烤肉", desc: "甜辣洋釀醬汁裹住燙口脆皮，咔滋咬下瞬間汁水四溢。" },
-    { title: "現點現蒸・港式點心與冰火菠蘿油", tag: "港式茶餐", baseKeyword: "港式飲茶 茶餐廳 點心", desc: "晶瑩鮮蝦餃、豉汁蒸排骨佐一杯濃滑絲襪奶茶。" },
-    { title: "開胃重擊・泰越酸辣料理與河粉", tag: "東南亞風", baseKeyword: "泰式料理 越式河粉 打拋豬", desc: "檸檬酸香、香茅與生辣椒交織，瞬間打開疲乏食慾的最佳解方。" },
-    { title: "柴燒香氣・義式薄脆窯烤披薩", tag: "義式窯烤", baseKeyword: "披薩 pizza 義大利麵", desc: "斑駁焦斑的餅皮帶有麥香，水牛起司與番茄羅勒的黃金搭配。" },
-    { title: "港灣直送・鮮撈海產與海鮮熱炒", tag: "海鮮饗宴", baseKeyword: "海鮮 海鮮小炒 現流海鮮", desc: "清蒸鮮魚、蒜蓉鮮蝦與海味熱炒，最天然不矯飾的鮮甜爽脆。" },
-    { title: "暖胃經典・道地砂鍋粥 / 鮮魚湯", tag: "溫潤養生", baseKeyword: "砂鍋粥 魚湯 海鮮粥", desc: "生米慢熬成濃稠米湯，融入干貝、鮮蝦或鱸魚的深層精華。" },
-    { title: "慢活時光・質感早午餐與精品咖啡", tag: "輕食早午餐", baseKeyword: "早午餐 brunch 咖啡廳", desc: "水波蛋、酸種麵包與沙拉，享受沒有時間追趕的悠閒自在。" },
-    { title: "無肉不歡・日式燒肉與和牛燒烤", tag: "極致燒肉", baseKeyword: "燒肉 烤肉 和牛", desc: "雪花油脂在高溫烤網上滋滋作響，沾上特調燒肉醬配白飯的頂級享受。" }
-  ];
-
-  // 動態擾動詞庫（打破 Google 地圖永遠推薦同一家店的演算法）
-  const dynamicModifiers = [
-    { name: "隱藏老饕", querySuffix: "在地人推薦 隱藏版", desc: "跳過觀光客常客，尋找在地老饕的私藏名單。" },
-    { name: "高人氣名店", querySuffix: "排隊名店 超人氣 必訪", desc: "雖然可能需要等候，但口碑經得起考驗的代表店家。" },
-    { name: "老字號功夫", querySuffix: "老店 老字號 口碑好", desc: "扎根數十年、累積扎實基本功的傳統經典味道。" },
-    { name: "高 CP 值日常", querySuffix: "平價 CP值高 在地小吃", desc: "荷包完全無痛、份量與口味都超誠意的良心好店。" },
-    { name: "近期話題新星", querySuffix: "新開幕 試營運 話題", desc: "剛插旗不久、風格新穎且在社群引起討論的潛力店家。" },
-    { name: "無拘微醺", querySuffix: "深夜 氣氛好 深夜食堂", desc: "適合放慢節奏、燈光舒適，能悠閒享用美食的情境。" }
-  ];
-
-  // 防重複抽籤池
-  let activePool = [...masterFoodPool];
-
-  const countrySelect = document.getElementById('countrySelect');
-  const stateSelect = document.getElementById('stateSelect');
-  const citySelect = document.getElementById('citySelect');
-  const useGps = document.getElementById('useGps');
   const btnRoll = document.getElementById('btnRoll');
+  const districtSelect = document.getElementById('districtSelect');
+  const useGps = document.getElementById('useGps');
   const resultBox = document.getElementById('resultBox');
-  const tagCategory = document.getElementById('tagCategory');
-  const tagModifier = document.getElementById('tagModifier');
-  const displayLocation = document.getElementById('displayLocation');
-  const displayTitle = document.getElementById('displayTitle');
-  const displaySub = document.getElementById('displaySub');
+
+  const resCuisine = document.getElementById('resCuisine');
+  const resStatus = document.getElementById('resStatus');
+  const resName = document.getElementById('resName');
+  const resAddress = document.getElementById('resAddress');
+  const resHours = document.getElementById('resHours');
+  const resPhone = document.getElementById('resPhone');
   const mapEmbed = document.getElementById('mapEmbed');
-  const mapDirectLink = document.getElementById('mapDirectLink');
+  const googleMapLink = document.getElementById('googleMapLink');
+  const websiteLink = document.getElementById('websiteLink');
 
-  function initSelectors() {
-    countrySelect.innerHTML = globalLocations.map((item, idx) => 
-      `<option value="${idx}">${item.country}</option>`
-    ).join('');
-    updateStates();
-  }
+  // 中文化料理標籤
+  const cuisineMap = {
+    chinese: "中式合菜 / 傳統料理",
+    noodles: "經典麵食 / 熱湯麵",
+    taiwanese: "台灣傳統特色小吃",
+    japanese: "日式料理 / 定食",
+    ramen: "日式拉麵",
+    sushi: "壽司 / 生魚片",
+    italian: "義式料理 / 披薩",
+    pizza: "窯烤披薩",
+    burger: "美式漢堡",
+    korean: "韓式料理 / 烤肉",
+    hotpot: "風味火鍋",
+    barbecue: "炭火燒肉 / 串燒",
+    seafood: "海鮮料理 / 鮮魚",
+    cafe: "咖啡輕食 / 甜點",
+    brunch: "早午餐",
+    vegetarian: "蔬食 / 素食友善"
+  };
 
-  function updateStates() {
-    const cIdx = parseInt(countrySelect.value, 10);
-    const states = globalLocations[cIdx].states;
-    stateSelect.innerHTML = states.map((item, idx) => 
-      `<option value="${idx}">${item.name}</option>`
-    ).join('');
-    updateCities();
-  }
-
-  function updateCities() {
-    const cIdx = parseInt(countrySelect.value, 10);
-    const sIdx = parseInt(stateSelect.value, 10);
-    const cities = globalLocations[cIdx].states[sIdx].cities;
-    citySelect.innerHTML = cities.map(city => 
-      `<option value="${city}">${city}</option>`
-    ).join('');
-  }
-
-  countrySelect.addEventListener('change', updateStates);
-  stateSelect.addEventListener('change', updateCities);
-
-  // 抽籤邏輯：無重複抽籤 + 隨機雙重擾動
-  btnRoll.addEventListener('click', () => {
-    btnRoll.textContent = "打亂演算法中...";
+  btnRoll.addEventListener('click', async () => {
     btnRoll.disabled = true;
+    btnRoll.textContent = "連線開源資料庫抽籤中...";
 
-    // 當前池抽空時，重新洗牌
-    if (activePool.length === 0) {
-      activePool = [...masterFoodPool];
-    }
+    try {
+      let places = [];
 
-    // 隨機抽取並從池子移除（確保不連續重複）
-    const themeIndex = Math.floor(Math.random() * activePool.length);
-    const pickedTheme = activePool.splice(themeIndex, 1)[0];
+      if (useGps.checked && navigator.geolocation) {
+        places = await getPlacesByGps();
+      } else {
+        const option = districtSelect.options[districtSelect.selectedIndex];
+        const district = option.value;
+        places = await getPlacesByDistrict(district);
+      }
 
-    // 隨機擾動因子
-    const pickedModifier = dynamicModifiers[Math.floor(Math.random() * dynamicModifiers.length)];
+      if (!places || places.length === 0) {
+        alert("該區域暫時找不到有登記店名的餐飲店家，請嘗試切換臨近區域！");
+        return;
+      }
 
-    if (useGps.checked && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          renderResult(pickedTheme, pickedModifier, `${lat},${lng}`, "📍 目前 GPS 定位周圍", true);
-        },
-        () => {
-          const fallbackLoc = getSelectedLocationName();
-          renderResult(pickedTheme, pickedModifier, fallbackLoc.queryText, fallbackLoc.labelText, false);
-        },
-        { timeout: 5000 }
-      );
-    } else {
-      const selected = getSelectedLocationName();
-      renderResult(pickedTheme, pickedModifier, selected.queryText, selected.labelText, false);
+      // 真實隨機挑選 1 家具體店面
+      const pick = places[Math.floor(Math.random() * places.length)];
+      renderResult(pick);
+    } catch (err) {
+      console.error(err);
+      alert("資料讀取失敗，可能是網路不穩或查詢過於頻繁，請稍後再試！");
+    } finally {
+      btnRoll.disabled = false;
+      btnRoll.textContent = "🎲 再抽一家真實餐廳";
     }
   });
 
-  function getSelectedLocationName() {
-    const cName = countrySelect.options[countrySelect.selectedIndex].text;
-    const sName = stateSelect.options[stateSelect.selectedIndex].text;
-    const cityName = citySelect.value;
-    return {
-      queryText: `${cityName}`,
-      labelText: `${cName.split(' ')[0]} › ${sName} › ${cityName}`
-    };
+  // 透過行政區查詢 OpenStreetMap
+  async function getPlacesByDistrict(districtName) {
+    if (cache[districtName] && cache[districtName].length > 0) {
+      return cache[districtName];
+    }
+
+    // Overpass 查詢語法：搜尋該地區內有具體店名 (name) 的餐廳與小吃
+    const query = `
+      [out:json][timeout:15];
+      area["name"="${districtName}"]->.searchArea;
+      (
+        node["amenity"~"restaurant|fast_food|cafe"]["name"](area.searchArea);
+        way["amenity"~"restaurant|fast_food|cafe"]["name"](area.searchArea);
+      );
+      out center 80;
+    `;
+
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: query
+    });
+
+    const data = await res.json();
+    const elements = data.elements || [];
+    cache[districtName] = elements;
+    return elements;
   }
 
-  function renderResult(theme, modifier, locationQuery, locationLabel, isCoords) {
-    tagCategory.textContent = theme.tag;
-    tagModifier.textContent = modifier.name;
-    displayLocation.textContent = locationLabel;
-    displayTitle.textContent = theme.title;
-    displaySub.textContent = `${theme.desc}（建議探索方向：${modifier.desc}）`;
+  // 透過 GPS 抓取目前周邊 1500 公尺以內的真實店家
+  function getPlacesByGps() {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const query = `
+          [out:json][timeout:15];
+          (
+            node["amenity"~"restaurant|fast_food|cafe"]["name"](around:1500,${lat},${lon});
+            way["amenity"~"restaurant|fast_food|cafe"]["name"](around:1500,${lat},${lon});
+          );
+          out center 80;
+        `;
+        try {
+          const res = await fetch("https://overpass-api.de/api/interpreter", {
+            method: "POST",
+            body: query
+          });
+          const data = await res.json();
+          resolve(data.elements || []);
+        } catch (e) {
+          reject(e);
+        }
+      }, (err) => reject(err), { timeout: 8000 });
+    });
+  }
 
-    // 組合動態擾動搜尋字串，迫使 Google Maps 刷新推薦列表
-    let fullSearchQuery = isCoords 
-      ? `${theme.baseKeyword} ${modifier.querySuffix}` 
-      : `${locationQuery} ${theme.baseKeyword} ${modifier.querySuffix}`;
+  // 將抽到的這一家店各項欄位填入介面
+  function renderResult(place) {
+    const tags = place.tags || {};
+    const name = tags.name || tags["name:zh"] || "在地餐飲小館";
+    
+    // 經緯度座標
+    const lat = place.lat || (place.center && place.center.lat);
+    const lon = place.lon || (place.center && place.center.lon);
 
-    const encoded = encodeURIComponent(fullSearchQuery);
+    // 地址結構化組合
+    let addr = "";
+    if (tags["addr:street"]) {
+      addr = `${tags["addr:city"] || ""} ${tags["addr:district"] || ""} ${tags["addr:street"]}${tags["addr:housenumber"] ? tags["addr:housenumber"] + "號" : ""}`;
+    } else if (tags["addr:full"]) {
+      addr = tags["addr:full"];
+    } else {
+      addr = "位置靠近經緯座標周圍（詳見地圖指示）";
+    }
 
-    mapDirectLink.href = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
-    mapEmbed.src = `https://maps.google.com/maps?q=${encoded}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+    // 料理分類對應
+    const rawCuisine = tags.cuisine ? tags.cuisine.split(';')[0].toLowerCase().trim() : "";
+    resCuisine.textContent = cuisineMap[rawCuisine] || (tags.amenity === "cafe" ? "特色咖啡館" : "在地特色小吃");
+
+    // 營業時間
+    resHours.textContent = tags.opening_hours ? `營業時間：${tags.opening_hours}` : "營業時間未登記（出發前建議電聯確認）";
+    resStatus.textContent = tags.opening_hours ? "有登記時間" : "建議確認營業狀態";
+
+    // 電話
+    resPhone.textContent = tags.phone || tags["contact:phone"] || "未提供電話";
+
+    // 官方網站
+    const web = tags.website || tags["contact:website"] || tags["contact:facebook"];
+    if (web) {
+      websiteLink.href = web;
+      websiteLink.style.display = "block";
+    } else {
+      websiteLink.style.display = "none";
+    }
+
+    resName.textContent = name;
+    resAddress.textContent = addr;
+
+    // Google Maps 深度連結（直接導向該店名與該精確經緯度）
+    const gQuery = encodeURIComponent(`${name}`);
+    googleMapLink.href = `https://www.google.com/maps/search/?api=1&query=${gQuery}&query_place_id=&center=${lat},${lon}`;
+
+    // 內嵌周邊地圖
+    mapEmbed.src = `https://maps.google.com/maps?q=${lat},${lon}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
 
     resultBox.style.display = 'block';
     resultBox.scrollIntoView({ behavior: 'smooth' });
-
-    btnRoll.textContent = `再抽一次 (盲盒剩餘 ${activePool.length} 種)`;
-    btnRoll.disabled = false;
   }
-
-  initSelectors();
 </script>
 
 </body>
