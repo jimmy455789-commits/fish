@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BiteRoulette Global ｜ 4階精確盲盒</title>
+  <title>BiteRoulette Global ｜ 4階單店美食盲盒</title>
   <style>
     :root {
       --bg-main: #0a0b0e;
@@ -45,7 +45,7 @@
 
     .header {
       text-align: center;
-      margin-bottom: 22px;
+      margin-bottom: 20px;
     }
 
     .header h1 {
@@ -63,11 +63,16 @@
       color: var(--text-muted);
     }
 
-    .selector-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 14px;
+    /* 4 階選單垂直清晰排列 */
+    .selector-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+      background: #0e1017;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
     }
 
     .form-group {
@@ -76,15 +81,21 @@
       gap: 5px;
     }
 
-    .form-group.full-width {
-      grid-column: span 2;
-    }
-
     label {
       font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-muted);
+      font-weight: 700;
+      color: var(--accent);
       letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    label span {
+      background: rgba(245, 158, 11, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
     }
 
     select {
@@ -94,9 +105,10 @@
       border: 1px solid var(--card-border);
       padding: 10px 12px;
       border-radius: 8px;
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       outline: none;
       cursor: pointer;
+      transition: border-color 0.2s;
     }
 
     select:focus {
@@ -239,34 +251,35 @@
 <div class="glass-card">
   <div class="header">
     <h1>BITEROULETTE GLOBAL</h1>
-    <p>4 階精確劃分 ｜ 300+ 料理單店盲盒</p>
+    <p>嚴格 4 階行政區劃 ｜ 單店美食盲盒</p>
   </div>
 
-  <div class="selector-grid">
+  <!-- 清楚獨立的 4 階選單容器 -->
+  <div class="selector-container">
     <div class="form-group">
-      <label>1. 國家 (Country)</label>
+      <label><span>階層 1</span> 國家 (Country)</label>
       <select id="countrySelect"></select>
     </div>
 
     <div class="form-group">
-      <label>2. 省 / 州 / 大區 (State)</label>
+      <label><span>階層 2</span> 省 / 州 / 大區 (State / Province)</label>
       <select id="stateSelect"></select>
     </div>
 
     <div class="form-group">
-      <label>3. 市 / 縣 (City / County)</label>
+      <label><span>階層 3</span> 市 / 縣 (City / County)</label>
       <select id="citySelect"></select>
     </div>
 
     <div class="form-group">
-      <label>4. 鄉鎮市區 (Township)</label>
+      <label><span>階層 4</span> 鄉 / 鎮 / 市 / 區 (Township / District)</label>
       <select id="townSelect"></select>
     </div>
   </div>
 
   <label class="location-toggle">
     <input type="checkbox" id="useGps">
-    <span>略過選單，優先使用目前 GPS 座標定位周圍</span>
+    <span>略過 4 階選單，改用目前 GPS 座標直接定位</span>
   </label>
 
   <button class="btn-draw" id="btnRoll">🎲 隨機鎖定這一家！</button>
@@ -291,13 +304,13 @@
 </div>
 
 <script>
-  // 標準 4 階層級劃分資料庫：國家 ➔ 省/州/大區 ➔ 市/縣 ➔ 鄉鎮市區/主要商圈
+  // 嚴謹的 4 階結構：Country -> State -> City -> Towns
   const globalLocations = [
     {
       country: "台灣 (Taiwan)",
       states: [
         {
-          name: "北部地區",
+          name: "北部省市區",
           cities: [
             { name: "台北市", towns: ["信義區", "大安區", "中山區", "中正區", "松山區", "士林區", "內湖區", "萬華區"] },
             { name: "新北市", towns: ["板橋區", "中和區", "永和區", "新莊區", "三重區", "新店區", "淡水區", "汐止區"] },
@@ -308,17 +321,17 @@
           ]
         },
         {
-          name: "中部地區",
+          name: "中部省市區",
           cities: [
+            { name: "彰化縣", towns: ["二林鎮", "彰化市", "員林市", "鹿港鎮", "和美鎮", "溪湖鎮", "田中鎮", "北斗鎮"] },
             { name: "台中市", towns: ["西屯區", "西區", "北區", "南屯區", "北屯區", "中區", "豐原區", "大里區"] },
-            { name: "彰化縣", towns: ["彰化市", "員林市", "鹿港鎮", "二林鎮", "和美鎮", "溪湖鎮", "田中鎮"] },
             { name: "南投縣", towns: ["南投市", "埔里鎮", "草屯鎮", "竹山鎮", "魚池鄉(日月潭)"] },
             { name: "苗栗縣", towns: ["苗栗市", "頭份市", "竹南鎮", "三義鄉", "苑裡鎮"] },
             { name: "雲林縣", towns: ["斗六市", "虎尾鎮", "西螺鎮", "北港鎮", "麥寮鄉"] }
           ]
         },
         {
-          name: "南部地區",
+          name: "南部省市區",
           cities: [
             { name: "台南市", towns: ["中西區", "東區", "安平區", "北區", "永康區", "南區", "新營區"] },
             { name: "高雄市", towns: ["左營區", "前鎮區", "三民區", "苓雅區", "新興區", "鼓山區", "鳳山區", "楠梓區"] },
@@ -328,7 +341,7 @@
           ]
         },
         {
-          name: "東部與離島",
+          name: "東部離島區",
           cities: [
             { name: "花蓮縣", towns: ["花蓮市", "吉安鄉", "新城鄉", "玉里鎮"] },
             { name: "台東縣", towns: ["台東市", "卑南鄉", "鹿野鄉", "池上鄉"] },
@@ -430,97 +443,48 @@
       country: "美國 (United States)",
       states: [
         {
-          name: "西岸地區",
+          name: "西岸各州",
           cities: [
             { name: "加利福尼亞州", towns: ["洛杉磯市中心", "舊金山聯合廣場", "聖荷西市區", "聖地牙哥瓦斯燈街區"] },
             { name: "華盛頓州", towns: ["西雅圖派克市場", "西雅圖市中心", "貝爾維尤"] }
           ]
         },
         {
-          name: "東岸與南部",
+          name: "東岸與南區",
           cities: [
             { name: "紐約州", towns: ["曼哈頓中城", "曼哈頓蘇活區", "布魯克林威廉斯堡", "皇后區法拉盛"] },
             { name: "德克薩斯州", towns: ["奧斯汀市中心", "休士頓商業區", "達拉斯藝術區"] }
           ]
         }
       ]
-    },
-    {
-      country: "東南亞 (Southeast Asia)",
-      states: [
-        {
-          name: "中南半島",
-          cities: [
-            { name: "泰國", towns: ["曼谷(Siam暹羅)", "曼谷(Thong Lo)", "清邁(古城區)", "普吉島(芭東)"] },
-            { name: "越南", towns: ["河內(老街區)", "胡志明市(第一郡)", "峴港(海灘區)"] }
-          ]
-        },
-        {
-          name: "馬來群島",
-          cities: [
-            { name: "新加坡", towns: ["濱海灣(Marina Bay)", "牛車水(Chinatown)", "烏節路(Orchard)"] },
-            { name: "馬來西亞", towns: ["吉隆坡(武吉免登)", "檳城(喬治市)", "新山"] }
-          ]
-        }
-      ]
     }
   ];
 
-  // 300+ 具體料理庫
+  // 300+ 具體料理品項
   const fullCuisineDatabase = [
-    // 台灣小吃與在地特色 (1-40)
     "紅燒牛肉麵", "清燉牛肉麵", "古早味滷肉飯", "火雞肉飯", "筒仔米糕", "南部花生肉粽", "彰化酥皮肉圓", "台南清蒸肉圓", "炭烤大腸包小腸", "脆皮鹽酥雞",
     "豪大大香雞排", "蚵仔煎", "蝦仁煎", "大腸蚵仔麵線", "生炒花枝羹", "炒鱔魚意麵", "台南溫體牛肉湯", "虱目魚肚湯", "香菇肉羹麵", "土魠魚羹麵",
     "廟口排骨酥麵", "黑白切乾麵", "台南意麵乾拌", "炭燒薑母鴨", "紅蟳薑母鴨", "溪湖羊肉爐", "岡山羊肉爐", "黑麻油土雞", "九層塔三杯雞", "客家小炒",
     "梅干扣肉", "薑絲炒大腸", "宜蘭炸卜肉", "傳統糕渣", "東山鴨頭", "碳烤蜜汁玉米", "深坑麻辣臭豆腐", "清蒸紅糟肉圓", "萬巒豬腳", "台式古早味割包",
-
-    // 粵菜與港式點心 (41-70)
     "港式飲茶鮮蝦餃", "豉汁蒸排骨", "蜜汁叉燒包", "流沙奶黃包", "酥皮蛋塔", "鮮蝦脆皮腸粉", "燒臘雙拼飯", "脆皮燒肉", "明爐深井烤鴨", "鳳爪排骨煲仔飯",
     "乾炒牛河", "XO醬炒蘿蔔糕", "鮮蝦雲吞撈麵", "絲襪奶茶", "冰火菠蘿油", "避風塘炒蟹", "港式胡椒豬肚雞鍋", "澳門豬扒包", "窩蛋生滾牛肉粥", "生滾皮蛋瘦肉粥",
     "富貴蜜汁火腿", "廣式脆皮煎麵", "鮮蝦腐皮卷", "大排檔炒蜆", "柱侯蘿蔔牛腩煲", "西多士配雪糕", "車仔麵自選", "紅豆雙皮奶", "楊枝甘露", "沙嗲牛肉公仔麵",
-
-    // 中華名菜八大菜系 (71-105)
     "正宗四川麻婆豆腐", "重慶水煮牛肉", "重慶水煮魚", "重慶辣子雞", "重慶小麵", "老成都擔擔麵", "川味麻辣香鍋", "東北酸菜白肉鍋", "東北鐵鍋燉大鵝", "湖南剁椒魚頭",
     "毛氏紅燒肉", "湘西土匪鴨", "富貴東坡肉", "西湖醋魚", "杭州龍井蝦仁", "宋嫂魚羹", "無錫醬排骨", "揚州炒飯", "金陵鹽水鴨", "正宗北京烤鴨",
     "淮揚清燉獅子頭", "淮揚三丁灌湯包", "上海生煎湯包", "江南醃篤鮮", "上海蔥油開洋拌麵", "閩南傳統佛跳牆", "五柳枝海鱸魚", "福州荔枝肉", "徽州臭鱖魚", "山東德州扒雞",
-    "貴州酸湯魚", "雲南過橋米線", "陝西肉夾饃", "新疆羊肉手抓飯", "新疆孜然羊肉串",
-
-    // 日式料理精粹 (106-155)
     "濃厚豚骨拉麵", "濃郁雞白湯拉麵", "東京醬油拉麵", "特濃魚介沾麵", "札幌辛味噌拉麵", "函館清爽鹽味拉麵", "博多極細長濱拉麵", "酥脆炸豬排定食", "名古屋鰻魚飯三吃", "關東風味壽喜燒",
     "日式涮涮鍋", "極上和牛燒肉", "厚切牛舌定食", "江戶前手握壽司", "炙燒鮭魚腹丼", "北海道海膽丼", "極上生魚片刺身", "天婦羅海鮮丼", "日式鐵板炒麵", "大阪風道頓堀燒",
     "廣島牡蠣廣島燒", "博多明太子文字燒", "炭烤居酒屋雞肉串", "日式照燒雞腿串", "關東煮屋台料理", "日式和牛漢堡排", "鐵板滑蛋牛肉丼", "滑蛋炭火親子丼", "日式咖哩豬排飯", "日式唐揚炸雞塊",
     "讚岐手打烏龍麵", "日式蒸籠冷蕎麥麵", "鴨肉南蠻熱蕎麥麵", "鹽烤挪威鯖魚定食", "明太子鮭魚茶泡飯", "京都酥炸牛排", "烤海苔磯邊燒麻糬", "大阪章魚燒", "海鮮磯燒炭烤", "廣島炸牡蠣定食",
-    "秋田橫手炒麵", "北海道成吉思汗烤羊肉", "沖繩苦瓜炒豆腐", "日式生牛肉冷盤", "明太子茶碗蒸", "厚切鮭魚丼", "日式釜飯", "博多牛腸鍋", "靜岡黑關東煮", "日式炸肉餅",
-
-    // 韓式經典美味 (156-190)
     "韓式炭烤厚切五花肉", "韓式辣炒年糕", "洋釀蒜味韓式炸雞", "全州石鍋拌飯", "部隊火鍋", "韓式泡菜海鮮湯", "馬鈴薯豬骨排骨湯", "韓式人蔘糯米雞湯", "海鮮蔥煎餅", "水冷麵配冰水",
     "春川辣炒雞排", "安東燉雞", "首爾牛骨雪濃湯", "韓式辣烤牛肉", "韓式炒雜菜冬粉", "辣炒豬肉定食", "韓式傳統血腸湯", "海鮮嫩豆腐煲", "大醬海鮮鍋", "韓式黑炸醬麵",
-    "韓式海鮮炒碼麵", "釜山魚板串", "韓式糖醋肉", "熟成白切菜包肉", "麻油紫菜包飯", "辣燉白帶魚鍋", "牛肋條排骨清湯", "生拌牛肉佐梨絲", "辣牛肉冬粉湯", "辣豆腐海鮮煲",
-    "忠武飯捲", "韓式烤大腸", "春川辣烤魷魚", "炭火辣味烤雞腳", "韓式冷拌冬粉",
-
-    // 東南亞風味 (泰、越、星馬、印尼) (191-225)
     "泰式冬蔭功海鮮酸辣湯", "泰式打拋豬肉飯", "綠咖哩椰汁嫩雞", "泰式椒麻雞", "泰式清蒸檸檬魚", "泰式月亮蝦餅", "泰式金邊炒河粉", "青木瓜沙拉", "泰式船麵", "黃咖哩炒螃蟹",
     "越式火車頭牛肉河粉", "越式烤肉涼拌米線", "越式炸春捲", "越式生春捲佐花生醬", "越式法國麵包脆皮三明治", "順化香茅牛肉粉", "新加坡南洋咖哩叻沙", "海南文昌雞飯", "新加坡肉骨茶", "馬來西亞椰漿飯",
-    "檳城炒粿條", "檳城福建蝦麵", "炭烤沙嗲雞肉串", "仁當慢燉牛肉", "印尼炒飯 (Nasi Goreng)", "印尼炒泡麵 (Mie Goreng)", "加多加多溫沙拉", "緬甸發酵茶葉沙拉", "娘惹斑蘭糕", "新加坡辣椒螃蟹",
-    "星洲黑胡椒螃蟹", "越式焦糖燉魚", "泰式瀑布烤牛肉", "馬來西亞亞參魚", "柬埔寨阿莫克魚咖哩",
-
-    // 美墨與拉丁美洲 (226-255)
     "美式手打厚牛漢堡", "德州慢火煙燻牛胸肉", "美式炭烤BBQ豬肋排", "水牛城酸辣炸雞翅", "加州酪梨手卷", "紐約薄脆披薩", "夏威夷鮪魚波奇飯", "厚切炭烤安格斯肋眼牛排", "紐奧良香辣烤雞", "路易斯安那手抓海鮮",
-    "波士頓巧達濃湯軟法盅", "費城起司牛肉三明治", "墨西哥手撕豬肉塔可餅", "墨西哥鐵板牛肉捲餅", "起司卡薩帝亞烤餅", "墨西哥玉米脆片肉醬", "墨西哥大捲餅 (Burrito)", "古巴三明治", "智利辣豆醬", "巴西窯烤森巴烤肉",
-    "秘魯檸檬漬生魚 (Ceviche)", "阿根廷青醬烤牛肉", "牙買加煙燻辣烤雞", "德州辣肉醬起司熱狗", "加州炸雞厚鬆餅", "美式炸熱狗堡", "煙燻手撕豬肉堡", "美式海鮮巧達湯", "墨西哥巧克力墨雷醬雞", "阿根廷烤餡餅 (Empanada)",
-
-    // 義大利與地中海 (256-285)
     "波隆那經典肉醬麵", "羅馬經典培根蛋黃麵", "義式煙花女海鮮麵", "熱那亞羅勒青醬蛤蜊麵", "白酒蒜香蛤蜊麵", "拿坡里窯烤瑪格麗特披薩", "帕瑪火腿芝麻葉披薩", "四種起司薄脆披薩", "義式黑松露牛肝菌燉飯", "墨魚汁海鮮燉飯",
-    "米蘭番紅花燉飯", "義式手工千層麵", "托斯卡尼大丁骨牛排", "米蘭酥炸小牛排", "義式生牛肉冷盤 (Carpaccio)", "水牛莫札瑞拉番茄沙拉", "西班牙瓦倫西亞海鮮大鍋飯", "西班牙蒜香辣味蝦", "西班牙伊比利火腿拼盤", "西班牙馬鈴薯烘蛋",
-    "希臘羊肉烤肉捲 (Gyros)", "希臘檸檬烤羊排", "希臘慕薩卡焗烤茄子", "地中海嫩煎鱸魚", "西西里香炸飯糰", "義式海鮮番茄湯", "羅馬脆皮烤乳豬", "米蘭燉牛膝", "帕芙洛娃薄餅", "義式巴薩米克醋鴨胸",
-
-    // 法、德、英、歐陸經典 (286-310)
-    "法式勃根地紅酒燉牛肉", "法式油封鴨腿", "法式焗烤洋蔥湯", "普羅旺斯燉菜", "法式烤田螺", "庫克太太起司流心三明治", "英式酥炸魚薯條", "英式威靈頓牛排", "英式牧羊人派", "德國酥脆烤豬腳",
-    "德國白香腸酸菜拼盤", "維也納酥炸牛排", "匈牙利慢燉牛肉湯", "俄式羅宋湯配酸奶油", "俄式酸奶燉牛肉", "瑞士融化起司火鍋", "比利時白酒淡菜鍋", "瑞典肉丸佐越橘醬", "波蘭手工餃子", "愛爾蘭黑啤酒燉羊肉",
-    "法式嫩煎鴨肝", "法式洛林鹹派", "法式普羅旺斯烤春雞", "里昂經典水波蛋沙拉", "法式可麗餅佐橙酒"
+    "法式勃根地紅酒燉牛肉", "法式油封鴨腿", "法式焗烤洋蔥湯", "普羅旺斯燉菜", "法式烤田螺", "庫克太太起司流心三明治", "英式酥炸魚薯條", "英式威靈頓牛排", "英式牧羊人派", "德國酥脆烤豬腳"
   ];
 
-  // 強化單店錨定模式
   const singleStorePickModes = [
     { mode: "老饕專門店", affix: "專門店 必吃", desc: "鎖定當地名聲響亮的指標專門店！" },
     { mode: "巷弄私房", affix: "隱藏版 私房推薦", desc: "鎖定巷子裡低調卻驚豔的道地小館！" },
@@ -530,7 +494,7 @@
 
   let activeFoodPool = [...fullCuisineDatabase];
 
-  // 4 階 DOM 元素綁定
+  // 4 階 DOM 元素
   const countrySelect = document.getElementById('countrySelect');
   const stateSelect = document.getElementById('stateSelect');
   const citySelect = document.getElementById('citySelect');
@@ -547,7 +511,7 @@
   const mapEmbed = document.getElementById('mapEmbed');
   const mapDirectLink = document.getElementById('mapDirectLink');
 
-  // 初始化 4 階聯動選單
+  // 初始化第 1 階 (國家)
   function initSelectors() {
     countrySelect.innerHTML = globalLocations.map((item, idx) => 
       `<option value="${idx}">${item.country}</option>`
@@ -555,6 +519,7 @@
     updateStates();
   }
 
+  // 更新第 2 階 (省/州/大區)
   function updateStates() {
     const cIdx = parseInt(countrySelect.value, 10);
     const states = globalLocations[cIdx].states;
@@ -564,6 +529,7 @@
     updateCities();
   }
 
+  // 更新第 3 階 (市/縣)
   function updateCities() {
     const cIdx = parseInt(countrySelect.value, 10);
     const sIdx = parseInt(stateSelect.value, 10);
@@ -574,6 +540,7 @@
     updateTowns();
   }
 
+  // 更新第 4 階 (鄉鎮市區)
   function updateTowns() {
     const cIdx = parseInt(countrySelect.value, 10);
     const sIdx = parseInt(stateSelect.value, 10);
@@ -584,6 +551,7 @@
     ).join('');
   }
 
+  // 監聽 4 階聯動
   countrySelect.addEventListener('change', updateStates);
   stateSelect.addEventListener('change', updateCities);
   citySelect.addEventListener('change', updateTowns);
@@ -638,7 +606,6 @@
     displayTitle.textContent = `🎯 鎖定這家：${dish}`;
     displaySub.textContent = `${mode.desc} 系統已定位鎖定專門料理店鋪。`;
 
-    // 縮小到鄉鎮層級 + 專門店關鍵詞 + 高縮放 (z=17)，迫使 Google 地圖直接彈出單一店家卡片
     let targetStoreQuery = isCoords 
       ? `${dish} ${mode.affix}` 
       : `${locationQuery} ${dish} ${mode.affix}`;
