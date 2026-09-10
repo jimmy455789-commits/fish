@@ -1247,7 +1247,7 @@
 })();
 </script>
 <!-- ======================================================== -->
-<!-- 徹底修復跳區快取污染 ＋ 強制重抓動態店家引擎 -->
+<!-- 獨立外掛模組：全球 4 鏡像節點 ＋ 智慧重試 3 次真實店家引擎 -->
 <!-- ======================================================== -->
 <style>
   .btn-spinner {
@@ -1261,17 +1261,13 @@
     vertical-align: middle;
     margin-right: 8px;
   }
-
-  @keyframes btn-spin {
-    to { transform: rotate(360deg); }
-  }
+  @keyframes btn-spin { to { transform: rotate(360deg); } }
 
   .btn-draw:disabled {
     background: #4b5563 !important;
     color: #d1d5db !important;
     cursor: not-allowed !important;
     pointer-events: none !important;
-    transform: none !important;
     box-shadow: none !important;
     opacity: 0.85 !important;
   }
@@ -1279,221 +1275,158 @@
 
 <script>
 (function() {
-  let isLocked = false;
-
-  // 具體料理庫（防止任何情況下退化為純行政區）
-  const cuisinePool = [
-    "紅燒牛肉麵", "脆皮肉圓", "大腸蚵仔麵線", "溫體牛肉湯", "炭火薑母鴨",
-    "古早味滷肉飯", "土魠魚羹", "排骨便當", "炭烤鹹酥雞", "當歸鴨麵線",
-    "港式燒臘雙拼", "鮮蝦雲吞麵", "特濃豚骨拉麵", "炸豬排定食", "韓式炸雞",
-    "石鍋拌飯", "泰式打拋豬飯", "越式牛肉河粉", "窯烤披薩", "手打美式漢堡",
-    "羊肉爐", "虱目魚肚粥", "筒仔米糕", "炒鱔魚意麵", "麻辣臭豆腐"
+  // 全球主要 Overpass 鏡像節點池（輪流替換，避開單一節點排隊塞車）
+  const overpassMirrors = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.openstreetmap.fr/api/interpreter",
+    "https://overpass.osm.ch/api/interpreter"
   ];
+
+  // 台灣主要行政區中心基準坐標（免除 Nominatim 請求負擔，跳區零延遲）
+  const baseCityCoords = {
+    "台北市": [25.0330, 121.5654], "新北市": [25.0169, 121.4627], "基隆市": [25.1276, 121.7391],
+    "桃園市": [24.9936, 121.3009], "新竹市": [24.8138, 120.9674], "新竹縣": [24.8387, 121.0177],
+    "苗栗縣": [24.5601, 120.8214], "台中市": [24.1477, 120.6736], "彰化縣": [24.0518, 120.5161],
+    "南投縣": [23.9609, 120.9718], "雲林縣": [23.7092, 120.4313], "嘉義市": [23.4800, 120.4491],
+    "嘉義縣": [23.4518, 120.2559], "台南市": [22.9997, 120.2270], "高雄市": [22.6273, 120.3014],
+    "屏東縣": [22.6761, 120.4885], "宜蘭縣": [24.7021, 121.7377], "花蓮縣": [23.9871, 121.6015],
+    "台東縣": [22.7583, 121.1444], "澎湖縣": [23.5711, 119.5793], "金門縣": [24.4492, 118.3765],
+    "油尖旺區": [22.3128, 114.1708], "中西區": [22.2821, 114.1581], "灣仔區": [22.2796, 114.1716]
+  };
 
   const btnRoll = document.getElementById('btnRoll');
   const resultBox = document.getElementById('resultBox');
   const mapEmbed = document.getElementById('mapEmbed');
   const mapDirectLink = document.getElementById('mapDirectLink');
 
-  const cSel = document.getElementById('countrySelect');
-  const sSel = document.getElementById('stateSelect');
   const ctSel = document.getElementById('citySelect');
   const tSel = document.getElementById('townSelect');
   const gpsCheck = document.getElementById('useGps');
 
   if (!btnRoll) return;
 
-  window.onDrawButtonClick = null;
-
-  // 當使用者變更任何一階選單，隱藏上一次舊結果，避免混淆
-  [cSel, sSel, ctSel, tSel].forEach(selectEl => {
-    if (selectEl) {
-      selectEl.addEventListener('change', () => {
-        if (resultBox) resultBox.style.display = 'none';
-      });
-    }
-  });
-
   btnRoll.onclick = async function(e) {
     e.preventDefault();
     e.stopPropagation();
 
-    if (isLocked) return;
+    btnRoll.disabled = true;
 
-    // 啟動 8 秒鎖定與動畫
-    startCooldownTimer(8);
-
-    // 1. 強制等待 50ms 確保所有連動 DOM 完全渲染
-    await new Promise(r => setTimeout(r, 50));
-
-    // 2. 即時精確讀取選單當前選中的文字（非 value）
-    const country = (cSel && cSel.selectedIndex >= 0) ? cSel.options[cSel.selectedIndex].text.split(' ')[0] : "台灣";
-    const city = (ctSel && ctSel.selectedIndex >= 0) ? ctSel.options[ctSel.selectedIndex].text.trim() : "";
-    const town = (tSel && tSel.selectedIndex >= 0) ? tSel.options[tSel.selectedIndex].text.trim() : "";
+    const city = (ctSel && ctSel.selectedIndex >= 0) ? ctSel.options[ctSel.selectedIndex].text.trim() : "彰化縣";
+    const town = (tSel && tSel.selectedIndex >= 0) ? tSel.options[tSel.selectedIndex].text.trim() : "二林鎮";
     const isGps = gpsCheck ? gpsCheck.checked : false;
 
-    console.log(`[執行檢索] 鎖定地區：${country} ${city} ${town}`);
-
     try {
-      let centerLat, centerLon, locationLabel;
+      let lat, lon, locationLabel;
 
       if (isGps && navigator.geolocation) {
-        const pos = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 4000 });
+        btnRoll.innerHTML = `<span class="btn-spinner"></span>GPS 定位中...`;
+        const pos = await new Promise((res, rej) => {
+          navigator.geolocation.getCurrentPosition(res, rej, { timeout: 3500 });
         });
-        centerLat = pos.coords.latitude;
-        centerLon = pos.coords.longitude;
-        locationLabel = "目前 GPS 定位周遭";
+        lat = pos.coords.latitude;
+        lon = pos.coords.longitude;
+        locationLabel = "目前位置周邊";
       } else {
         locationLabel = `${city} ${town}`;
-        // 動態即時反查坐標（零快取）
-        const coords = await getFreshCoords(country, city, town);
-        centerLat = coords.lat;
-        centerLon = coords.lon;
+        const base = baseCityCoords[city] || baseCityCoords[town] || [24.0518, 120.5161];
+        lat = base[0];
+        lon = base[1];
       }
 
-      // 動態即時抓取店家（零快取）
-      const realStores = await fetchFreshPlaces(centerLat, centerLon);
+      // 核心：啟動 3 次跨節點自動重試
+      const stores = await fetchWithSmartRetry(lat, lon, 3);
 
-      if (realStores && realStores.length > 0) {
-        const picked = realStores[Math.floor(Math.random() * realStores.length)];
-        renderRealStoreUI(picked, locationLabel);
+      if (stores && stores.length > 0) {
+        const picked = stores[Math.floor(Math.random() * stores.length)];
+        renderTargetStore(picked, locationLabel);
       } else {
-        // 若 OSM 未登錄該小區，強制配對具體料理進行專門店鎖定
-        renderDynamicDishStore(city, town, centerLat, centerLon);
+        alert(`【${locationLabel}】節點無回應或周邊未收錄，請再按一次重試！`);
       }
 
     } catch (err) {
-      console.warn("API 查詢超時或跨域限制，啟動保證跳動機制：", err);
-      renderDynamicDishStore(city, town, null, null);
+      console.warn("重試後依然逾時：", err);
+      alert("所有伺服器節點目前都在排隊中，請間隔 2 秒後再點一次！");
+    } finally {
+      btnRoll.disabled = false;
+      btnRoll.textContent = "🎲 抽一家真實店家！";
     }
   };
 
-  function startCooldownTimer(totalSeconds) {
-    isLocked = true;
-    btnRoll.disabled = true;
-
-    let remaining = totalSeconds;
-    updateBtnContent(remaining);
-
-    const countdown = setInterval(() => {
-      remaining--;
-      if (remaining > 0) {
-        updateBtnContent(remaining);
-      } else {
-        clearInterval(countdown);
-        isLocked = false;
-        btnRoll.disabled = false;
-        btnRoll.textContent = "🎲 再抽一家！";
-      }
-    }, 1000);
-  }
-
-  function updateBtnContent(sec) {
-    btnRoll.innerHTML = `<span class="btn-spinner"></span>搜尋與連線中 (${sec}s)...`;
-  }
-
-  // 即時查坐標（無快取殘留）
-  async function getFreshCoords(country, city, town) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
-
-    try {
-      const q = encodeURIComponent(`${country} ${city} ${town}`);
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=1`, {
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      const data = await res.json();
-
-      if (data && data.length > 0) {
-        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-      }
-    } catch (e) {
-      clearTimeout(timeoutId);
-    }
-    // 備援中心坐標
-    return { lat: 23.97, lon: 120.68 };
-  }
-
-  // 即時抓取真實店家（無快取殘留，隨機打散）
-  async function fetchFreshPlaces(lat, lon) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
-
+  // 智慧跨節點重試排程（MaxRetries: 3）
+  async function fetchWithSmartRetry(lat, lon, maxRetries) {
     const query = `
-      [out:json][timeout:4];
+      [out:json][timeout:3];
       (
-        node["amenity"~"restaurant|fast_food|cafe"]["name"](around:2500,${lat},${lon});
-        way["amenity"~"restaurant|fast_food|cafe"]["name"](around:2500,${lat},${lon});
+        node["amenity"~"restaurant|fast_food|cafe"]["name"](around:4000,${lat},${lon});
+        way["amenity"~"restaurant|fast_food|cafe"]["name"](around:4000,${lat},${lon});
       );
-      out center 50;
+      out center 40;
     `;
 
-    try {
-      const res = await fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        body: query,
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      const data = await res.json();
-      return (data.elements || []).filter(item => item.tags && (item.tags.name || item.tags["name:zh"]));
-    } catch (e) {
-      clearTimeout(timeoutId);
-      return [];
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      // 每次嘗試使用不同的伺服器鏡像
+      const mirrorUrl = overpassMirrors[(attempt - 1) % overpassMirrors.length];
+      
+      btnRoll.innerHTML = `<span class="btn-spinner"></span>連線節點 ${attempt}/${maxRetries}...`;
+
+      const controller = new AbortController();
+      // 單次連線給予 2.8 秒時限，逾時立即掐斷換下一個
+      const timer = setTimeout(() => controller.abort(), 2800);
+
+      try {
+        const res = await fetch(mirrorUrl, {
+          method: "POST",
+          body: query,
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+
+        if (res.ok) {
+          const data = await res.json();
+          const validList = (data.elements || []).filter(e => e.tags && (e.tags.name || e.tags["name:zh"]));
+          if (validList.length > 0) {
+            return validList; // 成功取得，直接返回
+          }
+        }
+      } catch (e) {
+        clearTimeout(timer);
+        console.warn(`節點 ${mirrorUrl} 失敗或超時，準備進行第 ${attempt} 次切換重試...`);
+      }
+
+      // 若未成功且還有重試機會，稍候 400ms 再打下一個站，避免被辨識為攻擊
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 400));
+      }
     }
+    return [];
   }
 
-  // 呈現真實店家
-  function renderRealStoreUI(place, locationLabel) {
+  // 渲染真實店家
+  function renderTargetStore(place, locationLabel) {
     const tags = place.tags || {};
-    const storeName = tags.name || tags["name:zh"] || "在地特色餐廳";
+    const storeName = tags.name || tags["name:zh"];
     const lat = place.lat || (place.center && place.center.lat);
     const lon = place.lon || (place.center && place.center.lon);
 
     let address = tags["addr:street"] 
       ? `${tags["addr:city"] || ""} ${tags["addr:street"]}${tags["addr:housenumber"] ? tags["addr:housenumber"] + "號" : ""}` 
-      : `位於 ${locationLabel} 核心商圈`;
+      : `位於 ${locationLabel}（座標：${lat.toFixed(4)}, ${lon.toFixed(4)}）`;
 
-    const rawCuisine = tags.cuisine || (tags.amenity === "cafe" ? "咖啡甜點" : "人氣美食");
+    const cuisine = tags.cuisine || (tags.amenity === "cafe" ? "特色咖啡館" : "在地人氣美食");
 
-    document.getElementById('tagCategory').textContent = rawCuisine.split(';')[0];
-    document.getElementById('tagStatus').textContent = "真實店家";
+    document.getElementById('tagCategory').textContent = cuisine.split(';')[0];
+    document.getElementById('tagStatus').textContent = "實體店家";
     document.getElementById('displayStoreName').textContent = `🏪 ${storeName}`;
     document.getElementById('displayAddress').textContent = address;
-    document.getElementById('displayHours').textContent = tags.opening_hours ? `🕒 營業時間：${tags.opening_hours}` : "🕒 營業時間：請點擊下方 Google 地圖即時確認";
-    document.getElementById('displayPhone').textContent = tags.phone || tags["contact:phone"] ? `📞 電話：${tags.phone || tags["contact:phone"]}` : "📞 電話：未登記（可透過 Google 地圖查看）";
+    document.getElementById('displayHours').textContent = tags.opening_hours ? `🕒 營業時間：${tags.opening_hours}` : "🕒 營業時間：請點擊下方 Google 地圖確認即時狀態";
+    document.getElementById('displayPhone').textContent = tags.phone || tags["contact:phone"] ? `📞 電話：${tags.phone || tags["contact:phone"]}` : "📞 電話：請至 Google Maps 商家頁查看";
 
     mapEmbed.src = `https://maps.google.com/maps?q=${lat},${lon}&t=&z=17&ie=UTF8&iwloc=B&output=embed`;
 
     const targetQuery = encodeURIComponent(`${storeName}`);
     mapDirectLink.href = `https://www.google.com/maps/search/?api=1&query=${targetQuery}&center=${lat},${lon}`;
     mapDirectLink.textContent = `在 Google Maps 開啟【${storeName}】專屬商家檔案 ↗`;
-
-    resultBox.style.display = 'block';
-    resultBox.scrollIntoView({ behavior: 'smooth' });
-  }
-
-  // 動態料理專門店鎖定（確保絕不卡在純行政區搜尋）
-  function renderDynamicDishStore(city, town, lat, lon) {
-    const randomDish = cuisinePool[Math.floor(Math.random() * cuisinePool.length)];
-    const modifier = ["專門店", "老老店", "在地推薦", "排隊名店"][Math.floor(Math.random() * 4)];
-    
-    // 嚴格組合明確的特定目標
-    const targetQuery = `${city} ${town} ${randomDish} ${modifier}`;
-    const encoded = encodeURIComponent(targetQuery);
-
-    document.getElementById('tagCategory').textContent = randomDish;
-    document.getElementById('tagStatus').textContent = "單店定向鎖定";
-    document.getElementById('displayStoreName').textContent = `🎯 鎖定：${town}・${randomDish} ${modifier}`;
-    document.getElementById('displayAddress').textContent = `${city} ${town} 熱鬧商圈`;
-    document.getElementById('displayHours').textContent = "🕒 營業時間：點擊下方地圖即時確認營業狀態";
-    document.getElementById('displayPhone').textContent = "📞 電話：請透過 Google Maps 專頁直接撥打";
-
-    mapEmbed.src = `https://maps.google.com/maps?q=${encoded}&t=&z=17&ie=UTF8&iwloc=B&output=embed`;
-    mapDirectLink.href = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
-    mapDirectLink.textContent = `在 Google Maps 開啟【${town}・${randomDish}】專屬檔案 ↗`;
 
     resultBox.style.display = 'block';
     resultBox.scrollIntoView({ behavior: 'smooth' });
