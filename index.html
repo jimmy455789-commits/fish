@@ -886,5 +886,183 @@
   }
 })();
 </script>
+  <!-- ======================================================== -->
+<!-- 獨立外掛模組：全自動動態地理反查 ＋ 真實店家即時抽籤引擎 -->
+<!-- 特性：零寫死店家、即時抓取全球任一行政區真實商家名冊 -->
+<!-- ======================================================== -->
+<script>
+(function() {
+  // 快取池（避免同一行政區反覆發送高頻請求）
+  const dynamicTownCache = {};
+
+  const btnRoll = document.getElementById('btnRoll');
+  const resultBox = document.getElementById('resultBox');
+  const mapEmbed = document.getElementById('mapEmbed');
+  const mapDirectLink = document.getElementById('mapDirectLink');
+
+  if (!btnRoll) return;
+
+  // 攔截並改寫按鈕邏輯
+  btnRoll.onclick = async function() {
+    btnRoll.disabled = true;
+    btnRoll.textContent = "📡 連線全球地理庫動態撈取店家名冊...";
+
+    // 1. 動態讀取當前選單中的文字
+    const cSel = document.getElementById('countrySelect');
+    const sSel = document.getElementById('stateSelect');
+    const ctSel = document.getElementById('citySelect');
+    const tSel = document.getElementById('townSelect');
+    const gpsCheck = document.getElementById('useGps');
+
+    const country = cSel && cSel.selectedIndex >= 0 ? cSel.options[cSel.selectedIndex].text.split(' ')[0] : "台灣";
+    const city = ctSel && ctSel.selectedIndex >= 0 ? ctSel.options[ctSel.selectedIndex].text : "彰化縣";
+    const town = tSel && tSel.value ? tSel.value : "二林鎮";
+    const isGps = gpsCheck ? gpsCheck.checked : false;
+
+    try {
+      let centerLat, centerLon, locationLabel;
+
+      if (isGps && navigator.geolocation) {
+        btnRoll.textContent = "📍 取得 GPS 定位中...";
+        const pos = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 6000 });
+        });
+        centerLat = pos.coords.latitude;
+        centerLon = pos.coords.longitude;
+        locationLabel = "目前 GPS 定位周遭";
+      } else {
+        // 2. 第一步：動態反查該行政區的精確經緯度（完全不用寫死座標！）
+        btnRoll.textContent = `🧭 定位【${city} ${town}】坐標中...`;
+        const coords = await getCoordsByNominatim(country, city, town);
+        centerLat = coords.lat;
+        centerLon = coords.lon;
+        locationLabel = `${city} ${town}`;
+      }
+
+      // 3. 第二步：以座標為中心，即時抓取周圍真實存在的餐廳店家名冊
+      btnRoll.textContent = `🏪 正在自資料庫抓取【${locationLabel}】所有真實店家...`;
+      const realStores = await fetchRealPlaces(centerLat, centerLon, locationLabel);
+
+      if (!realStores || realStores.length === 0) {
+        alert(`在【${locationLabel}】中心半徑內未檢索到營業店家，請嘗試選擇相鄰熱鬧市區！`);
+        return;
+      }
+
+      // 4. 第三步：真正的無預設隨機抽籤（在記憶體中隨機挑選 1 間具體店家）
+      const randomStore = realStores[Math.floor(Math.random() * realStores.length)];
+      renderSingleRealStore(randomStore, locationLabel);
+
+    } catch (err) {
+      console.error(err);
+      alert("連線開源地圖伺服器超時或網路波動，請再點一次！");
+    } finally {
+      btnRoll.disabled = false;
+      btnRoll.textContent = "🎲 再隨機抽一家真實店家！";
+    }
+  };
+
+  // 動態反查行政區中心經緯度 (利用 OpenStreetMap Nominatim 服務)
+  async function getCoordsByNominatim(country, city, town) {
+    const key = `${city}_${town}`;
+    if (dynamicTownCache[key] && dynamicTownCache[key].coords) {
+      return dynamicTownCache[key].coords;
+    }
+
+    const query = `${country} ${city} ${town}`;
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+
+    const res = await fetch(url, { headers: { "Accept-Language": "zh-TW,zh;q=0.9" } });
+    const data = await res.json();
+
+    if (!data || data.length === 0) {
+      // 容錯備援：若加上國家找不到，改用縣市+鄉鎮查詢
+      const fallbackUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city + " " + town)}&limit=1`;
+      const fbRes = await fetch(fallbackUrl);
+      const fbData = await fbRes.json();
+      if (fbData && fbData.length > 0) {
+        const coords = { lat: parseFloat(fbData[0].lat), lon: parseFloat(fbData[0].lon) };
+        dynamicTownCache[key] = { coords, stores: null };
+        return coords;
+      }
+      throw new Error("找不到該行政區坐標");
+    }
+
+    const coords = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+    dynamicTownCache[key] = { coords, stores: null };
+    return coords;
+  }
+
+  // 透過 Overpass API 即時抓取以座標為中心 2500 公尺內的真實店家
+  async function fetchRealPlaces(lat, lon, cacheKey) {
+    if (dynamicTownCache[cacheKey] && dynamicTownCache[cacheKey].stores) {
+      return dynamicTownCache[cacheKey].stores;
+    }
+
+    const query = `
+      [out:json][timeout:15];
+      (
+        node["amenity"~"restaurant|fast_food|cafe|pub"]["name"](around:2500,${lat},${lon});
+        way["amenity"~"restaurant|fast_food|cafe|pub"]["name"](around:2500,${lat},${lon});
+      );
+      out center 80;
+    `;
+
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: query
+    });
+
+    const data = await res.json();
+    const stores = (data.elements || []).filter(item => item.tags && item.tags.name);
+
+    if (!dynamicTownCache[cacheKey]) {
+      dynamicTownCache[cacheKey] = {};
+    }
+    dynamicTownCache[cacheKey].stores = stores;
+    return stores;
+  }
+
+  // 將抽中的「真實唯一店家」呈現於畫面，並組裝 Google Maps 專屬直達頁
+  function renderSingleRealStore(place, locationLabel) {
+    const tags = place.tags || {};
+    const storeName = tags.name || tags["name:zh"] || "在地特選小吃";
+    const lat = place.lat || (place.center && place.center.lat);
+    const lon = place.lon || (place.center && place.center.lon);
+
+    // 地址結構化
+    let address = "";
+    if (tags["addr:street"]) {
+      address = `${tags["addr:city"] || ""} ${tags["addr:district"] || ""} ${tags["addr:street"]}${tags["addr:housenumber"] ? tags["addr:housenumber"] + "號" : ""}`;
+    } else if (tags["addr:full"]) {
+      address = tags["addr:full"];
+    } else {
+      address = `位於 ${locationLabel} 核心商圈內（坐標：${lat.toFixed(4)}, ${lon.toFixed(4)}）`;
+    }
+
+    // 料理分類標籤
+    const rawCuisine = tags.cuisine || (tags.amenity === "cafe" ? "特色咖啡館" : (tags.amenity === "fast_food" ? "在地快餐小吃" : "風味餐飲"));
+
+    document.getElementById('tagCategory').textContent = rawCuisine.split(';')[0];
+    document.getElementById('tagStatus').textContent = "真實實體店家";
+    document.getElementById('displayStoreName').textContent = `🏪 ${storeName}`;
+    document.getElementById('displayAddress').textContent = address;
+    document.getElementById('displayHours').textContent = tags.opening_hours ? `🕒 營業時間：${tags.opening_hours}` : "🕒 營業時間：以 Google Maps 即時公告為準";
+    document.getElementById('displayPhone').textContent = tags.phone || tags["contact:phone"] ? `📞 電話：${tags.phone || tags["contact:phone"]}` : "📞 電話：可點擊下方按鈕直通地圖查看";
+
+    // 內嵌地圖
+    mapEmbed.src = `https://maps.google.com/maps?q=${lat},${lon}&t=&z=17&ie=UTF8&iwloc=B&output=embed`;
+
+    // 關鍵：將「真實店名 + 精確坐標」丟給 Google Maps，直接開啟該店家的商家知識檔案（非清單）
+    const targetQuery = encodeURIComponent(`${storeName}`);
+    mapDirectLink.href = `https://www.google.com/maps/search/?api=1&query=${targetQuery}&center=${lat},${lon}`;
+    mapDirectLink.textContent = `在 Google Maps 開啟【${storeName}】專屬商家檔案 ↗`;
+
+    resultBox.style.display = 'block';
+    resultBox.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  console.log(" BiteRoulette 動態真實店家抓取模組載入完成！");
+})();
+</script>
 </body>
 </html>
