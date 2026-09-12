@@ -841,6 +841,375 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 </script>
+<!-- ======================================================== -->
+<!-- 獨立追加模組：EXP 升級成長 ＋ 耐力值系統 ＋ 10點自由配點外掛 -->
+<!-- 特性：不改動原有 HTML，自動掛載 UI 與非侵入式邏輯擴充 -->
+<!-- ======================================================== -->
+<style id="dnd-addon-style">
+  .addon-bar-line {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 6px;
+  }
+  .addon-bar-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .addon-bar-bg {
+    background: #252a3a;
+    border-radius: 6px;
+    height: 10px;
+    width: 100%;
+    overflow: hidden;
+  }
+  .addon-fill-sta {
+    background: linear-gradient(90deg, #059669, #10b981);
+    height: 100%;
+    width: 100%;
+    transition: width 0.3s ease;
+  }
+  .addon-fill-exp {
+    background: linear-gradient(90deg, #d97706, #f59e0b);
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  /* 升級配點按鈕與橫幅 */
+  .addon-stat-plus {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #f59e0b;
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    width: 20px;
+    height: 20px;
+    font-weight: 900;
+    font-size: 0.85rem;
+    cursor: pointer;
+    line-height: 1;
+    display: none;
+  }
+  .addon-stat-plus:hover { filter: brightness(1.2); }
+  .addon-alloc-banner {
+    background: #3b2a0c;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #fef08a;
+    margin-bottom: 8px;
+  }
+  .stat-box { position: relative; } /* 確保 [+] 按鈕定位 */
+</style>
 
+<script id="dnd-addon-script">
+(function() {
+  const STORAGE_KEY = "DND_ADDON_EXP_STA_V1";
+
+  // 20 種族升級生命骰標準 (d12: 巨體, d10: 勇戰, d8: 均衡, d6: 靈巧)
+  const raceHpDieMap = {
+    "山脈矮人": 12, "半獸人": 12, "巨靈裔": 12, "蜥蜴人": 12,
+    "人類": 10, "丘陵矮人": 10, "龍裔": 10, "弗伯格": 10, "特里同": 10, "海靈": 10,
+    "高等精靈": 8, "木精靈": 8, "提夫林": 8, "半精靈": 8, "阿斯莫": 8, "天界裔": 8, "虎人": 8, "貓人": 8, "元素裔": 8,
+    "輕足半身人": 6, "半身人": 6, "岩侏儒": 6, "肯庫": 6, "鴉人": 6, "狗頭人": 6
+  };
+
+  // 外掛獨立狀態
+  let addonState = {
+    level: 1,
+    exp: 0,
+    maxExp: 100,
+    sta: 20,
+    maxSta: 20,
+    statPoints: 0
+  };
+
+  // 1. 本地讀檔
+  function loadAddonState() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try { addonState = Object.assign(addonState, JSON.parse(raw)); } catch(e) {}
+    }
+  }
+
+  function saveAddonState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(addonState));
+  }
+
+  // 2. 自動在現有 DOM 注入耐力與經驗值狀態條
+  function injectUI() {
+    // 尋找血條容器
+    const hpContainer = document.querySelector('.hp-bar-container') || document.getElementById('hpBar')?.parentElement;
+    if (!hpContainer || document.getElementById('addonStaBar')) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = `
+      <!-- 耐力條 (STA) -->
+      <div class="addon-bar-line">
+        <div class="addon-bar-info">
+          <span style="color: #6ee7b7;">⚡ 耐力值 (STA)</span>
+          <span id="addonStaText">${addonState.sta} / ${addonState.maxSta}</span>
+        </div>
+        <div class="addon-bar-bg">
+          <div class="addon-fill-sta" id="addonStaBar"></div>
+        </div>
+      </div>
+
+      <!-- 經驗值條 (EXP) -->
+      <div class="addon-bar-line">
+        <div class="addon-bar-info">
+          <span style="color: #fde047;">✨ 經驗值 (EXP)</span>
+          <span id="addonExpText">${addonState.exp} / ${addonState.maxExp}</span>
+        </div>
+        <div class="addon-bar-bg">
+          <div class="addon-fill-exp" id="addonExpBar"></div>
+        </div>
+      </div>
+    `;
+    hpContainer.parentNode.insertBefore(wrapper, hpContainer.nextSibling);
+
+    // 注入配點橫幅
+    const statsGrid = document.getElementById('statsGrid');
+    if (statsGrid && !document.getElementById('addonAllocBanner')) {
+      const banner = document.createElement('div');
+      banner.id = 'addonAllocBanner';
+      banner.className = 'addon-alloc-banner';
+      banner.innerHTML = `
+        <span>🎉 升級獎勵！可用能力點數：<strong id="addonPointsText" style="color:#fff; font-size:1rem;">0</strong> 點</span>
+        <span style="font-size: 0.75rem; opacity: 0.85;">點擊各屬性右上角 [+] 分配</span>
+      `;
+      statsGrid.parentNode.insertBefore(banner, statsGrid);
+    }
+
+    renderBars();
+    injectStatButtons();
+  }
+
+  // 3. 在六大屬性格子掛上 [+] 分配按鈕
+  function injectStatButtons() {
+    const statBoxes = document.querySelectorAll('.stat-box');
+    const hasPoints = addonState.statPoints > 0;
+
+    const banner = document.getElementById('addonAllocBanner');
+    if (banner) {
+      banner.style.display = hasPoints ? 'flex' : 'none';
+      const ptText = document.getElementById('addonPointsText');
+      if (ptText) ptText.textContent = addonState.statPoints;
+    }
+
+    statBoxes.forEach(box => {
+      let btn = box.querySelector('.addon-stat-plus');
+      const nameEl = box.querySelector('.stat-name');
+      if (!nameEl) return;
+      const statKey = nameEl.textContent.trim();
+
+      if (!btn) {
+        btn = document.createElement('button');
+        btn.className = 'addon-stat-plus';
+        btn.textContent = '+';
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          allocateStat(statKey);
+        };
+        box.appendChild(btn);
+      }
+      btn.style.display = hasPoints ? 'block' : 'none';
+    });
+  }
+
+  // 4. 自由點數分配邏輯
+  function allocateStat(statKey) {
+    if (addonState.statPoints <= 0) return;
+    if (typeof CharacterSheet !== 'undefined' && CharacterSheet.state && CharacterSheet.state.stats) {
+      CharacterSheet.state.stats[statKey] = (CharacterSheet.state.stats[statKey] || 10) + 1;
+      addonState.statPoints -= 1;
+
+      // CON 增加連帶提升 HP
+      if (statKey === "CON") {
+        CharacterSheet.state.maxHp = (CharacterSheet.state.maxHp || 10) + 1;
+        CharacterSheet.state.hp = (CharacterSheet.state.hp || 10) + 1;
+      }
+      // DEX 增加連帶提升 AC
+      if (statKey === "DEX") {
+        const dexMod = Math.floor((CharacterSheet.state.stats.DEX - 10) / 2);
+        CharacterSheet.state.ac = 10 + dexMod;
+      }
+
+      if (typeof CharacterSheet.renderStats === 'function') CharacterSheet.renderStats();
+      if (typeof CharacterSheet.renderHP === 'function') CharacterSheet.renderHP();
+    }
+
+    saveAddonState();
+    injectStatButtons();
+  }
+
+  // 5. 經驗獲取與自動升級運算
+  function addExp(amount) {
+    addonState.exp += amount;
+
+    while (addonState.exp >= addonState.maxExp) {
+      addonState.exp -= addonState.maxExp;
+      addonState.level += 1;
+      addonState.maxExp = Math.floor(addonState.maxExp * 1.5);
+
+      // (A) 耐力值每升 1 級提升 5 點
+      addonState.maxSta += 5;
+      addonState.sta = addonState.maxSta;
+
+      // (B) 每次升級固定獲得 10 點自由分配點數
+      addonState.statPoints += 10;
+
+      // (C) 依據種族生命骰自動提升生命上限
+      let raceKey = "人類";
+      if (typeof CharacterSheet !== 'undefined' && CharacterSheet.state) {
+        const fullRace = CharacterSheet.state.raceName || document.getElementById('charRaceGenderTag')?.textContent || "";
+        for (const k in raceHpDieMap) {
+          if (fullRace.includes(k)) { raceKey = k; break; }
+        }
+
+        const dieSides = raceHpDieMap[raceKey] || 8;
+        const conScore = CharacterSheet.state.stats?.CON || 10;
+        const conMod = Math.floor((conScore - 10) / 2);
+        const hpRoll = Math.floor(Math.random() * dieSides) + 1;
+        const hpGain = Math.max(3, hpRoll + conMod);
+
+        CharacterSheet.state.maxHp = (CharacterSheet.state.maxHp || 10) + hpGain;
+        CharacterSheet.state.hp = CharacterSheet.state.maxHp;
+
+        if (typeof CharacterSheet.renderHP === 'function') CharacterSheet.renderHP();
+        if (typeof BattleLog !== 'undefined') {
+          BattleLog.add(`🌟【升級達成！】升至等級 Lv.${addonState.level}！`, "crit");
+          BattleLog.add(`⚡ 耐力上限 +5 (當前: ${addonState.maxSta})，【${raceKey}】體質生命骰 d${dieSides} 使 HP 提升 +${hpGain} (當前: ${CharacterSheet.state.maxHp})！`, "crit");
+          BattleLog.add(`🎁 獲得 10 點自由分配點數，已開啟屬性面板 [+] 按鈕！`, "crit");
+        }
+      }
+    }
+
+    renderBars();
+    injectStatButtons();
+    saveAddonState();
+  }
+
+  // 6. 耐力消耗與恢復
+  function useStamina(val) {
+    if (addonState.sta < val) return false;
+    addonState.sta -= val;
+    renderBars();
+    saveAddonState();
+    return true;
+  }
+
+  function restoreStamina() {
+    addonState.sta = addonState.maxSta;
+    renderBars();
+    saveAddonState();
+  }
+
+  function renderBars() {
+    const staBar = document.getElementById('addonStaBar');
+    const staText = document.getElementById('addonStaText');
+    if (staBar && staText) {
+      const pct = Math.max(0, (addonState.sta / addonState.maxSta) * 100);
+      staBar.style.width = `${pct}%`;
+      staText.textContent = `${addonState.sta} / ${addonState.maxSta}`;
+    }
+
+    const expBar = document.getElementById('addonExpBar');
+    const expText = document.getElementById('addonExpText');
+    if (expBar && expText) {
+      const pct = Math.max(0, (addonState.exp / addonState.maxExp) * 100);
+      expBar.style.width = `${pct}%`;
+      expText.textContent = `${addonState.exp} / ${addonState.maxExp}`;
+    }
+  }
+
+  // 7. 攔截主程式動作按鈕，掛上耐力與經驗獲取邏輯
+  function hookActions() {
+    const btnAtk = document.getElementById('btnAtk');
+    const btnEvade = document.getElementById('btnEvade');
+    const btnRest = document.getElementById('btnRest');
+    const btnReset = document.getElementById('btnResetGame');
+
+    // 攔截攻擊 (消耗 3 耐力，擊倒給 EXP)
+    if (btnAtk && !btnAtk.dataset.addonHooked) {
+      btnAtk.dataset.addonHooked = "true";
+      btnAtk.addEventListener('click', function(e) {
+        if (!useStamina(3)) {
+          e.stopImmediatePropagation(); // 耐力不夠，強制阻斷攻擊
+          if (typeof BattleLog !== 'undefined') BattleLog.add("⚡ 耐力不足！無法揮動武器，請使用「短休息」！", "fail");
+          return;
+        }
+        // 延遲偵測是否有怪物被擊倒
+        setTimeout(() => {
+          if (typeof DungeonMaster !== 'undefined' && !DungeonMaster.getCurrentMonster()) {
+            addExp(45); // 擊殺獲得 45 EXP
+          }
+        }, 100);
+      }, true); // Capture 階段攔截
+    }
+
+    // 攔截翻滾 (消耗 2 耐力)
+    if (btnEvade && !btnEvade.dataset.addonHooked) {
+      btnEvade.dataset.addonHooked = "true";
+      btnEvade.addEventListener('click', function(e) {
+        if (!useStamina(2)) {
+          e.stopImmediatePropagation();
+          if (typeof BattleLog !== 'undefined') BattleLog.add("⚡ 耐力不足！雙腿發軟無法流暢翻滾！", "fail");
+        }
+      }, true);
+    }
+
+    // 攔截短休息 (耐力全回滿)
+    if (btnRest && !btnRest.dataset.addonHooked) {
+      btnRest.dataset.addonHooked = "true";
+      btnRest.addEventListener('click', function() {
+        restoreStamina();
+        if (typeof BattleLog !== 'undefined') BattleLog.add("⚡ 營火歇息使耐力值完全恢復！", "success");
+      });
+    }
+
+    // 重開新局時同步清空外掛存檔
+    if (btnReset && !btnReset.dataset.addonHooked) {
+      btnReset.dataset.addonHooked = "true";
+      btnReset.addEventListener('click', function() {
+        localStorage.removeItem(STORAGE_KEY);
+        addonState = { level: 1, exp: 0, maxExp: 100, sta: 20, maxSta: 20, statPoints: 0 };
+        renderBars();
+        injectStatButtons();
+      });
+    }
+  }
+
+  // 啟動入口
+  function initAddon() {
+    loadAddonState();
+    injectUI();
+    hookActions();
+
+    // 監聽 DOM 變化，防止主程式重繪時沖刷掉外掛按鈕
+    const observer = new MutationObserver(() => {
+      injectUI();
+      hookActions();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    console.log(" D&D EXP/STA 成長外掛模組已自動掛載！");
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAddon);
+  } else {
+    initAddon();
+  }
+})();
+</script>
 </body>
 </html>
