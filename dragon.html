@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D&D 5e: 永恆地城冒險模組</title>
+  <style>
+    :root {
+      --bg-main: #0c0d12;
+      --card-bg: #151821;
+      --card-border: #2b3040;
+      --accent-gold: #f59e0b;
+      --accent-crimson: #ef4444;
+      --accent-mana: #3b82f6;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .dnd-container {
+      width: 100%;
+      max-width: 900px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .dnd-container { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .panel-header {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--accent-gold);
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* 角色狀態卡 */
+    .char-profile {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .avatar {
+      width: 50px;
+      height: 50px;
+      background: #202534;
+      border: 2px solid var(--accent-gold);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+    }
+
+    .hp-bar-container {
+      background: #252a3a;
+      border-radius: 8px;
+      height: 16px;
+      width: 100%;
+      overflow: hidden;
+      margin-top: 4px;
+      position: relative;
+    }
+
+    .hp-bar-fill {
+      background: linear-gradient(90deg, #b91c1c, #ef4444);
+      height: 100%;
+      width: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .stat-box {
+      background: #1c2130;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      text-align: center;
+      padding: 8px;
+    }
+
+    .stat-name { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+    .stat-val { font-size: 1.2rem; font-weight: 800; color: #fff; }
+    .stat-mod { font-size: 0.8rem; color: var(--accent-gold); font-weight: 700; }
+
+    /* 遭遇與場景卡 */
+    .encounter-box {
+      background: #1b1e2a;
+      border: 1px dashed var(--accent-gold);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.9rem;
+      min-height: 80px;
+    }
+
+    /* 控制與動作列 */
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    button.btn-act {
+      background: #232838;
+      color: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    button.btn-act:hover {
+      background: var(--accent-gold);
+      color: #000;
+      border-color: var(--accent-gold);
+    }
+
+    button.btn-explore {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      color: #000;
+      border: none;
+      font-size: 1rem;
+      grid-column: span 2;
+    }
+
+    button.btn-explore:hover {
+      filter: brightness(1.1);
+    }
+
+    /* 戰鬥與事件終端日誌 */
+    .console-log {
+      background: #090a0e;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 10px;
+      height: 380px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .log-item {
+      padding: 4px 6px;
+      border-radius: 4px;
+      border-left: 3px solid #6b7280;
+    }
+
+    .log-crit { border-left-color: var(--accent-gold); color: #fde047; font-weight: 700; }
+    .log-fail { border-left-color: var(--accent-crimson); color: #fca5a5; }
+    .log-success { border-left-color: #10b981; color: #6ee7b7; }
+    .log-encounter { border-left-color: var(--accent-mana); color: #93c5fd; }
+  </style>
+</head>
+<body>
+
+<div class="dnd-container">
+  <!-- 左側：角色面版 ＋ 冒險行動 -->
+  <div class="panel">
+    <div class="panel-header">
+      <span>冒險者檔案</span>
+      <span style="font-size: 0.8rem; color: var(--text-muted);">D&D 5E 核心</span>
+    </div>
+
+    <!-- 角色基本屬性 -->
+    <div class="char-profile">
+      <div class="avatar">🛡️</div>
+      <div style="flex: 1;">
+        <div style="font-weight: 800; font-size: 1.05rem;" id="charName">羅蘭 (Roland)</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">人類 狂戰士 | 等級 1</div>
+        <div class="hp-bar-container">
+          <div class="hp-bar-fill" id="hpBar"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 3px;">
+          <span>HP 生命值</span>
+          <span id="hpText">14 / 14</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 六大屬性數值卡 -->
+    <div class="stats-grid" id="statsGrid">
+      <!-- 由 Character 模組動態掛載 -->
+    </div>
+
+    <!-- 當前地下城場景 -->
+    <div class="panel-header" style="margin-top: 6px;">
+      <span>目前地城遭遇</span>
+    </div>
+    <div class="encounter-box" id="encounterDesc">
+      你踏入了幽暗的「黑石廢墟」。前方石門緊閉，火把在穿堂風中忽明忽暗...
+    </div>
+
+    <!-- 冒險決策按鈕 -->
+    <div class="action-grid">
+      <button class="btn-act btn-explore" id="btnExplore">🚪 深入地城探索 (隨機遭遇)</button>
+      <button class="btn-act" id="btnAtk">⚔️ 揮劍攻擊 (STR)</button>
+      <button class="btn-act" id="btnEvade">💨 閃避翻滾 (DEX)</button>
+      <button class="btn-act" id="btnSearch">🔍 調查暗門 (INT)</button>
+      <button class="btn-act" id="btnRest">🏕️ 短休息 (恢復 HP)</button>
+    </div>
+  </div>
+
+  <!-- 右側：地城冒險戰鬥終端 Log -->
+  <div class="panel">
+    <div class="panel-header">
+      <span>地城日誌 (Combat & Dice Log)</span>
+      <button style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.75rem;" id="btnClearLog">清空</button>
+    </div>
+    <div class="console-log" id="gameLog">
+      <div class="log-item">地下城系統已就緒，請點擊「深入地城探索」開啟冒險。</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/**
+ * ========================================================
+ * 模組 1：DndEngine (核心規則與骰子運算引擎)
+ * ========================================================
+ */
+const DndEngine = (function() {
+  function roll(diceSides) {
+    return Math.floor(Math.random() * diceSides) + 1;
+  }
+
+  function getModifier(score) {
+    return Math.floor((score - 10) / 2);
+  }
+
+  function d20Check(modifier = 0, dc = 12) {
+    const raw = roll(20);
+    const total = raw + modifier;
+    const isCrit = raw === 20;
+    const isCritFail = raw === 1;
+    const isSuccess = isCrit || (!isCritFail && total >= dc);
+
+    return { raw, modifier, total, dc, isCrit, isCritFail, isSuccess };
+  }
+
+  return { roll, getModifier, d20Check };
+})();
+
+/**
+ * ========================================================
+ * 模組 2：CharacterSheet (角色卡資料與屬性模組)
+ * ========================================================
+ */
+const CharacterSheet = (function() {
+  const state = {
+    name: "羅蘭",
+    class: "狂戰士",
+    maxHp: 16,
+    hp: 16,
+    ac: 14,
+    stats: {
+      STR: 16, // +3
+      DEX: 14, // +2
+      CON: 15, // +2
+      INT: 9,  // -1
+      WIS: 12, // +1
+      CHA: 8   // -1
+    }
+  };
+
+  function getMod(statKey) {
+    return DndEngine.getModifier(state.stats[statKey]);
+  }
+
+  function takeDamage(val) {
+    state.hp = Math.max(0, state.hp - val);
+    renderHP();
+    return state.hp;
+  }
+
+  function heal(val) {
+    state.hp = Math.min(state.maxHp, state.hp + val);
+    renderHP();
+    return state.hp;
+  }
+
+  function renderStats() {
+    const grid = document.getElementById('statsGrid');
+    grid.innerHTML = Object.entries(state.stats).map(([k, v]) => {
+      const mod = DndEngine.getModifier(v);
+      const sign = mod >= 0 ? `+${mod}` : `${mod}`;
+      return `
+        <div class="stat-box">
+          <div class="stat-name">${k}</div>
+          <div class="stat-val">${v}</div>
+          <div class="stat-mod">${sign}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderHP() {
+    const hpBar = document.getElementById('hpBar');
+    const hpText = document.getElementById('hpText');
+    const pct = (state.hp / state.maxHp) * 100;
+    hpBar.style.width = `${pct}%`;
+    hpText.textContent = `${state.hp} / ${state.maxHp}`;
+  }
+
+  return { state, getMod, takeDamage, heal, renderStats, renderHP };
+})();
+
+/**
+ * ========================================================
+ * 模組 3：DungeonMaster (隨機遭遇與事件生成模組)
+ * ========================================================
+ */
+const DungeonMaster = (function() {
+  const monsters = [
+    { name: "哥布林斥侯", ac: 11, hp: 7, atk: 2, dmg: 4, desc: "一隻揮舞生鏽匕首的綠皮哥布林從陰影撲出！" },
+    { name: "穴居食屍鬼", ac: 12, hp: 12, atk: 3, dmg: 6, desc: "帶著腐爛氣息的食屍鬼正撕扯著骸骨，轉頭盯上了你！" },
+    { name: "重裝半獸人督軍", ac: 14, hp: 18, atk: 4, dmg: 8, desc: "一名手持破甲巨斧的半獸人戰士擋住了通道，咆哮震天！" }
+  ];
+
+  let currentMonster = null;
+
+  function spawnEncounter() {
+    const isCombat = Math.random() > 0.35;
+    if (isCombat) {
+      currentMonster = { ...monsters[Math.floor(Math.random() * monsters.length)] };
+      return {
+        type: "COMBAT",
+        monster: currentMonster,
+        text: `【遭遇敵人】${currentMonster.desc}（護甲等級 AC: ${currentMonster.ac}, 生命: ${currentMonster.hp}）`
+      };
+    } else {
+      currentMonster = null;
+      const traps = [
+        "你踩中了鬆動的石板，頭頂傳來機關巨石滾動的轟鳴聲！（需要敏捷 DEX 檢定）",
+        "一堵刻滿失落矮人文的暗門立在走道盡頭。（需要智力 INT 檢定解鎖）",
+        "廢棄祭壇前散落著被洗劫的符文寶箱。（可嘗試搜索）"
+      ];
+      return {
+        type: "EVENT",
+        text: `【環境發現】${traps[Math.floor(Math.random() * traps.length)]}`
+      };
+    }
+  }
+
+  function getCurrentMonster() { return currentMonster; }
+  function clearMonster() { currentMonster = null; }
+
+  return { spawnEncounter, getCurrentMonster, clearMonster };
+})();
+
+/**
+ * ========================================================
+ * 模組 4：BattleLog (日誌呈現模組)
+ * ========================================================
+ */
+const BattleLog = (function() {
+  const logBox = document.getElementById('gameLog');
+
+  function add(msg, type = "normal") {
+    const el = document.createElement('div');
+    el.className = `log-item log-${type}`;
+    el.textContent = `[${new Date().toLocaleTimeString().slice(3, 8)}] ${msg}`;
+    logBox.appendChild(el);
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  function clear() {
+    logBox.innerHTML = "";
+  }
+
+  return { add, clear };
+})();
+
+/**
+ * ========================================================
+ * 主控接合層：事件綁定與生命週期調度
+ * ========================================================
+ */
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. 初始化角色數值面板
+  CharacterSheet.renderStats();
+  CharacterSheet.renderHP();
+
+  const encounterBox = document.getElementById('encounterDesc');
+
+  // 2. 深入地城按鈕
+  document.getElementById('btnExplore').addEventListener('click', () => {
+    const encounter = DungeonMaster.spawnEncounter();
+    encounterBox.textContent = encounter.text;
+    BattleLog.add(encounter.text, "encounter");
+  });
+
+  // 3. 攻擊按鈕 (1d20 + STR mod)
+  document.getElementById('btnAtk').addEventListener('click', () => {
+    const monster = DungeonMaster.getCurrentMonster();
+    if (!monster) {
+      BattleLog.add("當前沒有敵對目標可以攻擊，請先探索地城！");
+      return;
+    }
+
+    const strMod = CharacterSheet.getMod('STR');
+    const check = DndEngine.d20Check(strMod, monster.ac);
+
+    if (check.isCrit) {
+      const dmg = DndEngine.roll(8) + DndEngine.roll(8) + strMod;
+      monster.hp -= dmg;
+      BattleLog.add(`💥 致命一擊（Natural 20）！揮出大成功，對 ${monster.name} 造成 ${dmg} 點重擊傷害！`, "crit");
+    } else if (check.isCritFail) {
+      BattleLog.add(`💀 大失敗（Natural 1）！你的武器脫手撞在石壁上，攻擊完全落空！`, "fail");
+    } else if (check.isSuccess) {
+      const dmg = DndEngine.roll(8) + strMod;
+      monster.hp -= dmg;
+      BattleLog.add(`⚔️ 命中判定成功！(骰出 ${check.raw} + ${check.modifier} = ${check.total} vs AC ${check.dc})。造成 ${dmg} 點傷害。`, "success");
+    } else {
+      BattleLog.add(`🛡️ 攻擊偏斜！(骰出 ${check.total} vs AC ${check.dc}) 未能擊穿對手護甲。`);
+    }
+
+    // 怪物陣亡判定或反擊
+    if (monster.hp <= 0) {
+      BattleLog.add(`🏆 ${monster.name} 發出悲鳴倒地不起，戰鬥獲勝！`, "crit");
+      encounterBox.textContent = `戰鬥結束，地牢重新歸於平靜。你可以繼續探索。`;
+      DungeonMaster.clearMonster();
+    } else {
+      // 怪物反擊
+      const mAtk = DndEngine.roll(20) + monster.atk;
+      if (mAtk >= CharacterSheet.state.ac) {
+        CharacterSheet.takeDamage(monster.dmg);
+        BattleLog.add(`🩸 ${monster.name} 反擊命中！造成 ${monster.dmg} 點傷害。（剩餘 HP: ${CharacterSheet.state.hp}）`, "fail");
+        if (CharacterSheet.state.hp <= 0) {
+          BattleLog.add(`☠️ 你陷入了瀕死狀態（HP歸零）！冒險結束，請短休息重生。`, "fail");
+        }
+      } else {
+        BattleLog.add(`🛡️ 你靈活舉盾擋下了 ${monster.name} 的反擊！`);
+      }
+    }
+  });
+
+  // 4. 敏捷迴避 (DEX 檢定)
+  document.getElementById('btnEvade').addEventListener('click', () => {
+    const dexMod = CharacterSheet.getMod('DEX');
+    const check = DndEngine.d20Check(dexMod, 12);
+    if (check.isSuccess) {
+      BattleLog.add(`🤸 敏捷檢定成功 (${check.total} vs DC 12)！你俐落地翻滾避開了潛在威脅。`, "success");
+    } else {
+      BattleLog.add(`💢 敏捷檢定失敗 (${check.total} vs DC 12)！你失去了平衡。`, "fail");
+    }
+  });
+
+  // 5. 智力解鎖/調查 (INT 檢定)
+  document.getElementById('btnSearch').addEventListener('click', () => {
+    const intMod = CharacterSheet.getMod('INT');
+    const check = DndEngine.d20Check(intMod, 13);
+    if (check.isSuccess) {
+      BattleLog.add(`💡 調查檢定成功 (${check.total} vs DC 13)！你識破了暗門邊緣的微弱刮痕。`, "success");
+    } else {
+      BattleLog.add(`❓ 調查檢定失敗 (${check.total} vs DC 13)！你什麼異狀都沒有發現。`);
+    }
+  });
+
+  // 6. 短休息恢復
+  document.getElementById('btnRest').addEventListener('click', () => {
+    const healed = CharacterSheet.heal(DndEngine.roll(8) + CharacterSheet.getMod('CON'));
+    BattleLog.add(`🏕️ 你搭起營火短休息，恢復了生命值（目前 HP: ${healed}）。`, "success");
+  });
+
+  // 清空紀錄
+  document.getElementById('btnClearLog').addEventListener('click', () => {
+    BattleLog.clear();
+  });
+});
+</script>
+
+</body>
+</html>
