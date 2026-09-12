@@ -1211,6 +1211,227 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 })();
 </script>
+<!-- ======================================================== -->
+<!-- 獨立追加模組：魔物血條 HUD ＋ 技能傷害系統 (安全防凍結版) -->
+<!-- 特性：移除 DOM Observer，事件驅動更新，絕不卡死瀏覽器 -->
+<!-- ======================================================== -->
+<style id="dnd-monster-hud-style">
+  .monster-hud-card {
+    background: linear-gradient(180deg, #231215 0%, #170d10 100%);
+    border: 1px solid #7f1d1d;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .monster-hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .monster-name-tag {
+    font-weight: 800;
+    color: #f87171;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .monster-ac-badge {
+    background: #371518;
+    color: #fca5a5;
+    border: 1px solid #991b1b;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+  .monster-hp-container {
+    background: #2a1115;
+    border-radius: 6px;
+    height: 12px;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid #4c1d24;
+  }
+  .monster-hp-bar {
+    background: linear-gradient(90deg, #dc2626, #ef4444);
+    height: 100%;
+    width: 100%;
+    transition: width 0.25s ease;
+  }
+  .monster-hp-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fca5a5;
+  }
+  .monster-skills-box {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+  }
+  .skill-pill {
+    background: #35181c;
+    border: 1px solid #5c242a;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    color: #fed7aa;
+  }
+</style>
 
+<script id="dnd-monster-hud-script">
+(function() {
+  const monsterArsenal = {
+    "老鼠": [
+      { name: "狂亂撕咬", dmgSides: 4, dmgBonus: 1, rate: 0.6 },
+      { name: "疫病感染", dmgSides: 6, dmgBonus: 2, rate: 0.4 }
+    ],
+    "哥布林": [
+      { name: "淬毒刺擊", dmgSides: 6, dmgBonus: 2, rate: 0.5 },
+      { name: "拋擲碎石", dmgSides: 4, dmgBonus: 1, rate: 0.3 },
+      { name: "狂亂揮砍", dmgSides: 8, dmgBonus: 2, rate: 0.2 }
+    ],
+    "骷髏": [
+      { name: "戰矛穿刺", dmgSides: 6, dmgBonus: 2, rate: 0.5 },
+      { name: "盾牌猛擊", dmgSides: 4, dmgBonus: 3, rate: 0.3 },
+      { name: "裂骨重劈", dmgSides: 10, dmgBonus: 3, rate: 0.2 }
+    ],
+    "食屍鬼": [
+      { name: "腐爛利爪", dmgSides: 8, dmgBonus: 2, rate: 0.6 },
+      { name: "噬血撕咬", dmgSides: 10, dmgBonus: 3, rate: 0.4 }
+    ],
+    "半獸人": [
+      { name: "破甲巨斧", dmgSides: 12, dmgBonus: 3, rate: 0.5 },
+      { name: "野蠻衝撞", dmgSides: 8, dmgBonus: 4, rate: 0.5 }
+    ],
+    "default": [
+      { name: "猛烈突襲", dmgSides: 6, dmgBonus: 1, rate: 0.7 },
+      { name: "致命撲擊", dmgSides: 8, dmgBonus: 2, rate: 0.3 }
+    ]
+  };
+
+  let maxHpRecord = 0;
+  let lastRenderedMonster = null;
+  let lastRenderedHp = -1;
+
+  function getSkills(name) {
+    for (const k in monsterArsenal) {
+      if (name.includes(k)) return monsterArsenal[k];
+    }
+    return monsterArsenal["default"];
+  }
+
+  function renderMonsterHUD() {
+    const encounterBox = document.getElementById('encounterDesc');
+    if (!encounterBox) return;
+
+    let curMonster = null;
+    if (typeof DungeonMaster !== 'undefined' && typeof DungeonMaster.getCurrentMonster === 'function') {
+      curMonster = DungeonMaster.getCurrentMonster();
+    }
+
+    let hud = document.getElementById('monsterCombatHud');
+
+    // 無魔物或怪物死亡 -> 移除 HUD
+    if (!curMonster || curMonster.hp <= 0) {
+      if (hud) hud.remove();
+      maxHpRecord = 0;
+      lastRenderedMonster = null;
+      lastRenderedHp = -1;
+      return;
+    }
+
+    // 換了新怪物 -> 重置最大血量
+    if (lastRenderedMonster !== curMonster) {
+      lastRenderedMonster = curMonster;
+      maxHpRecord = curMonster.hp;
+    }
+
+    // 數值無變化則略過，避免無謂重繪
+    if (lastRenderedHp === curMonster.hp && hud) return;
+    lastRenderedHp = curMonster.hp;
+
+    const skills = getSkills(curMonster.name);
+    const hpPct = Math.max(0, Math.min(100, (curMonster.hp / maxHpRecord) * 100));
+
+    if (!hud) {
+      hud = document.createElement('div');
+      hud.id = 'monsterCombatHud';
+      hud.className = 'monster-hud-card';
+      encounterBox.parentNode.insertBefore(hud, encounterBox);
+    }
+
+    hud.innerHTML = `
+      <div class="monster-hud-header">
+        <div class="monster-name-tag">
+          <span>💀</span>
+          <span>${curMonster.name}</span>
+        </div>
+        <div class="monster-ac-badge">護甲 AC: ${curMonster.ac}</div>
+      </div>
+      <div class="monster-hp-container">
+        <div class="monster-hp-bar" style="width: ${hpPct}%;"></div>
+      </div>
+      <div class="monster-hp-text">
+        <span>魔物剩餘血量</span>
+        <span>${curMonster.hp} / ${maxHpRecord} HP</span>
+      </div>
+      <div class="monster-skills-box">
+        ${skills.map(s => `<span class="skill-pill">⚡ ${s.name} (1d${s.dmgSides}+${s.dmgBonus})</span>`).join('')}
+      </div>
+    `;
+  }
+
+  // 綁定特定按鈕事件更新 HUD，絕不使用全域 MutationObserver
+  function setupEvents() {
+    const btnExplore = document.getElementById('btnExplore');
+    const btnAtk = document.getElementById('btnAtk');
+    const btnReset = document.getElementById('btnResetGame');
+
+    if (btnExplore) {
+      btnExplore.addEventListener('click', () => {
+        setTimeout(renderMonsterHUD, 30);
+      });
+    }
+
+    if (btnAtk) {
+      btnAtk.addEventListener('click', () => {
+        // 在反擊前隨機抽招，給怪物換上技能傷害
+        const curMonster = typeof DungeonMaster !== 'undefined' ? DungeonMaster.getCurrentMonster() : null;
+        if (curMonster && curMonster.hp > 0) {
+          const skills = getSkills(curMonster.name);
+          const picked = skills[Math.floor(Math.random() * skills.length)];
+          curMonster.dmg = Math.floor(Math.random() * picked.dmgSides) + 1 + picked.dmgBonus;
+        }
+        setTimeout(renderMonsterHUD, 30);
+      });
+    }
+
+    if (btnReset) {
+      btnReset.addEventListener('click', () => {
+        const hud = document.getElementById('monsterCombatHud');
+        if (hud) hud.remove();
+        maxHpRecord = 0;
+        lastRenderedMonster = null;
+      });
+    }
+
+    // 初次載入刷新一次
+    renderMonsterHUD();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupEvents);
+  } else {
+    setupEvents();
+  }
+})();
+</script>
 </body>
 </html>
