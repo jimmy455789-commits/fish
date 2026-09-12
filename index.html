@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>D&D 5e: 永恆地城冒險模組</title>
+  <title>D&D 5e: 永恆地城冒險模組 (初心者起步版)</title>
   <style>
     :root {
       --bg-main: #0c0d12;
@@ -34,9 +34,9 @@
 
     .dnd-container {
       width: 100%;
-      max-width: 900px;
+      max-width: 950px;
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1.1fr 0.9fr;
       gap: 16px;
     }
 
@@ -65,6 +65,49 @@
       align-items: center;
     }
 
+    /* 創角面板樣式 */
+    .creation-box {
+      background: #191d2b;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    input[type="text"], select {
+      background: #0f121a;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      color: #fff;
+      padding: 8px 10px;
+      font-size: 0.9rem;
+      outline: none;
+      flex: 1;
+    }
+
+    input[type="text"]:focus, select:focus {
+      border-color: var(--accent-gold);
+    }
+
     /* 角色狀態卡 */
     .char-profile {
       display: flex;
@@ -73,15 +116,15 @@
     }
 
     .avatar {
-      width: 50px;
-      height: 50px;
+      width: 54px;
+      height: 54px;
       background: #202534;
       border: 2px solid var(--accent-gold);
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.6rem;
+      font-size: 1.8rem;
     }
 
     .hp-bar-container {
@@ -91,7 +134,6 @@
       width: 100%;
       overflow: hidden;
       margin-top: 4px;
-      position: relative;
     }
 
     .hp-bar-fill {
@@ -105,7 +147,6 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
-      margin-top: 8px;
     }
 
     .stat-box {
@@ -127,10 +168,10 @@
       border-radius: 8px;
       padding: 12px;
       font-size: 0.9rem;
-      min-height: 80px;
+      min-height: 70px;
     }
 
-    /* 控制與動作列 */
+    /* 按鈕樣式 */
     .action-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -166,17 +207,24 @@
       grid-column: span 2;
     }
 
-    button.btn-explore:hover {
-      filter: brightness(1.1);
+    button.btn-danger {
+      background: #451a1a;
+      border-color: #7f1d1d;
+      color: #fca5a5;
     }
 
-    /* 戰鬥與事件終端日誌 */
+    button.btn-danger:hover {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    /* 戰鬥與日誌終端 */
     .console-log {
       background: #090a0e;
       border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 10px;
-      height: 380px;
+      height: 440px;
       overflow-y: auto;
       font-family: monospace;
       font-size: 0.85rem;
@@ -200,60 +248,95 @@
 <body>
 
 <div class="dnd-container">
-  <!-- 左側：角色面版 ＋ 冒險行動 -->
+  <!-- 左側：角色面版 ＋ 創角區 ＋ 行動 -->
   <div class="panel">
     <div class="panel-header">
       <span>冒險者檔案</span>
-      <span style="font-size: 0.8rem; color: var(--text-muted);">D&D 5E 核心</span>
+      <button class="btn-act btn-danger" style="padding: 4px 10px; font-size: 0.75rem;" id="btnResetGame">🔄 重開新局</button>
     </div>
 
-    <!-- 角色基本屬性 -->
-    <div class="char-profile">
-      <div class="avatar">🛡️</div>
-      <div style="flex: 1;">
-        <div style="font-weight: 800; font-size: 1.05rem;" id="charName">羅蘭 (Roland)</div>
-        <div style="font-size: 0.8rem; color: var(--text-muted);">人類 狂戰士 | 等級 1</div>
-        <div class="hp-bar-container">
-          <div class="hp-bar-fill" id="hpBar"></div>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 3px;">
-          <span>HP 生命值</span>
-          <span id="hpText">14 / 14</span>
+    <!-- 創角面板 (未創角或重開新局時顯示) -->
+    <div class="creation-box" id="creationPanel">
+      <div style="font-weight: 700; color: var(--accent-gold); font-size: 0.95rem;">新冒險者登錄</div>
+      
+      <div class="form-group">
+        <label>角色姓名</label>
+        <div class="input-row">
+          <input type="text" id="inputName" placeholder="輸入名稱或隨機擲骰" maxlength="12">
+          <button class="btn-act" style="padding: 0 12px;" id="btnRandomName">🎲 隨機</button>
         </div>
       </div>
+
+      <div class="form-group">
+        <label>性別</label>
+        <select id="selectGender">
+          <option value="男">男性 (Male)</option>
+          <option value="女">女性 (Female)</option>
+          <option value="非二元">無性別 / 中性 (Non-binary)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>種族 (本輪隨機推薦 5 種特色種族)</label>
+        <select id="selectRace">
+          <!-- 由 RaceModule 動態注入 5 種推薦 -->
+        </select>
+        <div id="raceBonusTip" style="font-size: 0.75rem; color: #93c5fd; margin-top: 2px;"></div>
+      </div>
+
+      <button class="btn-act btn-explore" id="btnConfirmCreate" style="margin-top: 4px;">✨ 踏上冒險旅程</button>
     </div>
 
-    <!-- 六大屬性數值卡 -->
-    <div class="stats-grid" id="statsGrid">
-      <!-- 由 Character 模組動態掛載 -->
-    </div>
+    <!-- 角色現有狀態區 (創角後顯示) -->
+    <div id="activeProfileArea" style="display: none; flex-direction: column; gap: 12px;">
+      <div class="char-profile">
+        <div class="avatar" id="displayAvatar">🛡️</div>
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: baseline; gap: 6px;">
+            <span style="font-weight: 800; font-size: 1.1rem;" id="charDisplayName">--</span>
+            <span style="font-size: 0.8rem; color: var(--accent-gold);" id="charRaceGenderTag">--</span>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">職業：初心者 (Novice) | 等級 1</div>
+          <div class="hp-bar-container">
+            <div class="hp-bar-fill" id="hpBar"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 3px;">
+            <span>HP 生命值</span>
+            <span id="hpText">10 / 10</span>
+          </div>
+        </div>
+      </div>
 
-    <!-- 當前地下城場景 -->
-    <div class="panel-header" style="margin-top: 6px;">
-      <span>目前地城遭遇</span>
-    </div>
-    <div class="encounter-box" id="encounterDesc">
-      你踏入了幽暗的「黑石廢墟」。前方石門緊閉，火把在穿堂風中忽明忽暗...
-    </div>
+      <!-- 六大屬性數值卡 -->
+      <div class="stats-grid" id="statsGrid"></div>
 
-    <!-- 冒險決策按鈕 -->
-    <div class="action-grid">
-      <button class="btn-act btn-explore" id="btnExplore">🚪 深入地城探索 (隨機遭遇)</button>
-      <button class="btn-act" id="btnAtk">⚔️ 揮劍攻擊 (STR)</button>
-      <button class="btn-act" id="btnEvade">💨 閃避翻滾 (DEX)</button>
-      <button class="btn-act" id="btnSearch">🔍 調查暗門 (INT)</button>
-      <button class="btn-act" id="btnRest">🏕️ 短休息 (恢復 HP)</button>
+      <!-- 當前地下城場景 -->
+      <div class="panel-header" style="margin-top: 4px;">
+        <span>目前地城遭遇</span>
+      </div>
+      <div class="encounter-box" id="encounterDesc">
+        你握緊了初心者木劍，踏入了幽暗的地下城入口...
+      </div>
+
+      <!-- 冒險決策按鈕 -->
+      <div class="action-grid">
+        <button class="btn-act btn-explore" id="btnExplore">🚪 深入地城探索 (隨機遭遇)</button>
+        <button class="btn-act" id="btnAtk">⚔️ 揮劍攻擊 (STR)</button>
+        <button class="btn-act" id="btnEvade">💨 翻滾閃避 (DEX)</button>
+        <button class="btn-act" id="btnSearch">🔍 調查機關 (INT)</button>
+        <button class="btn-act" id="btnRest">🏕️ 短休息 (恢復 HP)</button>
+      </div>
     </div>
   </div>
 
-  <!-- 右側：地城冒險戰鬥終端 Log -->
+  <!-- 右側：地城日誌 Log -->
   <div class="panel">
     <div class="panel-header">
-      <span>地城日誌 (Combat & Dice Log)</span>
+      <span>冒險日誌 (Battle & Event Log)</span>
       <button style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.75rem;" id="btnClearLog">清空</button>
     </div>
     <div class="console-log" id="gameLog">
-      <div class="log-item">地下城系統已就緒，請點擊「深入地城探索」開啟冒險。</div>
+      <div class="log-item">地下城記錄模組已就緒。</div>
     </div>
   </div>
 </div>
@@ -261,7 +344,7 @@
 <script>
 /**
  * ========================================================
- * 模組 1：DndEngine (核心規則與骰子運算引擎)
+ * 模組 1：DndEngine (核心規則與隨機數計算)
  * ========================================================
  */
 const DndEngine = (function() {
@@ -279,7 +362,6 @@ const DndEngine = (function() {
     const isCrit = raw === 20;
     const isCritFail = raw === 1;
     const isSuccess = isCrit || (!isCritFail && total >= dc);
-
     return { raw, modifier, total, dc, isCrit, isCritFail, isSuccess };
   }
 
@@ -288,45 +370,155 @@ const DndEngine = (function() {
 
 /**
  * ========================================================
- * 模組 2：CharacterSheet (角色卡資料與屬性模組)
+ * 模組 2：RaceModule (20大奇幻種族庫與推薦推薦引擎)
+ * ========================================================
+ */
+const RaceModule = (function() {
+  const allRaces = [
+    { id: "human", name: "人類 (Human)", bonus: { STR: 1, DEX: 1, CON: 1, INT: 1, WIS: 1, CHA: 1 }, tip: "全屬性 +1，適應力極強" },
+    { id: "high_elf", name: "高等精靈 (High Elf)", bonus: { DEX: 2, INT: 1 }, tip: "DEX+2, INT+1，敏銳而具奧術天賦" },
+    { id: "wood_elf", name: "木精靈 (Wood Elf)", bonus: { DEX: 2, WIS: 1 }, tip: "DEX+2, WIS+1，身手敏捷、洞察力高" },
+    { id: "mountain_dwarf", name: "山脈矮人 (Mountain Dwarf)", bonus: { STR: 2, CON: 2 }, tip: "STR+2, CON+2，體魄強壯堅韌" },
+    { id: "hill_dwarf", name: "丘陵矮人 (Hill Dwarf)", bonus: { CON: 2, WIS: 1 }, tip: "CON+2, WIS+1，強健且富有感知" },
+    { id: "lightfoot_halfling", name: "輕足半身人 (Halfling)", bonus: { DEX: 2, CHA: 1 }, tip: "DEX+2, CHA+1，天性靈巧、擅長社交" },
+    { id: "dragonborn", name: "龍裔 (Dragonborn)", bonus: { STR: 2, CHA: 1 }, tip: "STR+2, CHA+1，身懷巨龍之威" },
+    { id: "tiefling", name: "提夫林 (Tiefling)", bonus: { CHA: 2, INT: 1 }, tip: "CHA+2, INT+1，具有深淵血脈與魔性魅力" },
+    { id: "half_orc", name: "半獸人 (Half-Orc)", bonus: { STR: 2, CON: 1 }, tip: "STR+2, CON+1，爆發力與兇蠻生存本能" },
+    { id: "rock_gnome", name: "岩侏儒 (Rock Gnome)", bonus: { INT: 2, CON: 1 }, tip: "INT+2, CON+1，好奇心旺盛且精通發明" },
+    { id: "half_elf", name: "半精靈 (Half-Elf)", bonus: { CHA: 2, DEX: 1, CON: 1 }, tip: "CHA+2, DEX+1, CON+1，優雅兼具堅毅" },
+    { id: "goliath", name: "巨靈裔 (Goliath)", bonus: { STR: 2, CON: 1 }, tip: "STR+2, CON+1，如崇山峻嶺般的高大體格" },
+    { id: "aasimar", name: "阿斯莫/天界裔 (Aasimar)", bonus: { CHA: 2, WIS: 1 }, tip: "CHA+2, WIS+1，帶有神聖天界的祝福光環" },
+    { id: "tabaxi", name: "虎人/貓人 (Tabaxi)", bonus: { DEX: 2, CHA: 1 }, tip: "DEX+2, CHA+1，極致敏捷與無窮好奇心" },
+    { id: "firbolg", name: "弗伯格/森巨人 (Firbolg)", bonus: { WIS: 2, STR: 1 }, tip: "WIS+2, STR+1，森林的寧靜守護者" },
+    { id: "kenku", name: "肯庫/鴉人 (Kenku)", bonus: { DEX: 2, WIS: 1 }, tip: "DEX+2, WIS+1，擅長模仿與潛伏潛行" },
+    { id: "lizardfolk", name: "蜥蜴人 (Lizardfolk)", bonus: { CON: 2, WIS: 1 }, tip: "CON+2, WIS+1，冷血無情的野性生存者" },
+    { id: "triton", name: "海靈/特里同 (Triton)", bonus: { STR: 1, CON: 1, CHA: 1 }, tip: "STR+1, CON+1, CHA+1，深海霸主一族" },
+    { id: "kobold", name: "狗頭人 (Kobold)", bonus: { DEX: 2, INT: 1 }, tip: "DEX+2, INT+1，身軀矮小但狡詐機警" },
+    { id: "genasi", name: "元素裔 (Genasi)", bonus: { CON: 2, INT: 1 }, tip: "CON+2, INT+1，體內流淌著原始元素之力" }
+  ];
+
+  // 隨機抽選 5 種不重複的推薦種族
+  function getRandomFiveRaces() {
+    const shuffled = [...allRaces].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 5);
+  }
+
+  function getRaceById(id) {
+    return allRaces.find(r => r.id === id) || allRaces[0];
+  }
+
+  return { getRandomFiveRaces, getRaceById };
+})();
+
+/**
+ * ========================================================
+ * 模組 3：NameGenerator (隨機奇幻姓名生成器)
+ * ========================================================
+ */
+const NameGenerator = (function() {
+  const firstNames = {
+    "男": ["阿爾文", "布蘭德", "凱爾", "戴里克", "伊凡", "加雷斯", "羅蘭", "席恩", "托爾芬", "法蘭茲"],
+    "女": ["愛麗絲", "碧翠絲", "賽蓮娜", "黛安娜", "艾蓮娜", "費歐娜", "吉妮薇", "伊索德", "露娜", "薇薇安"],
+    "非二元": ["阿斯特", "灰羽", "莫斯", "瑞文", "索爾", "文森", "微風", "影刃", "白霜", "琥珀"]
+  };
+
+  const familyTitles = ["破曉者", "影行者", "鐵壁", "霜語", "炎心", "尋路者", "風暴", "深谷", "星痕", "綠葉"];
+
+  function generate(gender = "男") {
+    const pool = firstNames[gender] || firstNames["男"];
+    const fname = pool[Math.floor(Math.random() * pool.length)];
+    const title = familyTitles[Math.floor(Math.random() * familyTitles.length)];
+    return `${fname} · ${title}`;
+  }
+
+  return { generate };
+})();
+
+/**
+ * ========================================================
+ * 模組 4：CharacterSheet (角色屬性與初心者狀態)
  * ========================================================
  */
 const CharacterSheet = (function() {
-  const state = {
-    name: "羅蘭",
-    class: "狂戰士",
-    maxHp: 16,
-    hp: 16,
-    ac: 14,
-    stats: {
-      STR: 16, // +3
-      DEX: 14, // +2
-      CON: 15, // +2
-      INT: 9,  // -1
-      WIS: 12, // +1
-      CHA: 8   // -1
-    }
+  // 初心者基礎範本 (全能力基準 10)
+  const baseAttributes = { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 };
+
+  let character = {
+    name: "新冒險者",
+    gender: "男",
+    raceId: "human",
+    raceName: "人類",
+    class: "初心者",
+    level: 1,
+    maxHp: 10,
+    hp: 10,
+    ac: 11, // 基礎 10 + 初始護甲/敏捷
+    stats: { ...baseAttributes }
   };
 
+  function initNew(name, gender, raceObj) {
+    character.name = name || "無名冒險者";
+    character.gender = gender;
+    character.raceId = raceObj.id;
+    character.raceName = raceObj.name.split(' ')[0];
+    character.class = "初心者";
+    character.level = 1;
+
+    // 重新計算屬性：基準 10 + 種族修正
+    const newStats = { ...baseAttributes };
+    Object.entries(raceObj.bonus).forEach(([stat, val]) => {
+      if (newStats[stat] !== undefined) {
+        newStats[stat] += val;
+      }
+    });
+    character.stats = newStats;
+
+    // 初心者生命計算：8(d8生命骰最高值) + 體質調整值
+    const conMod = DndEngine.getModifier(character.stats.CON);
+    character.maxHp = Math.max(6, 8 + conMod);
+    character.hp = character.maxHp;
+
+    // 護甲等級 AC = 10 + DEX 調整值
+    const dexMod = DndEngine.getModifier(character.stats.DEX);
+    character.ac = 10 + dexMod;
+
+    renderAll();
+    SaveEngine.save();
+  }
+
   function getMod(statKey) {
-    return DndEngine.getModifier(state.stats[statKey]);
+    return DndEngine.getModifier(character.stats[statKey]);
   }
 
   function takeDamage(val) {
-    state.hp = Math.max(0, state.hp - val);
+    character.hp = Math.max(0, character.hp - val);
     renderHP();
-    return state.hp;
+    SaveEngine.save();
+    return character.hp;
   }
 
   function heal(val) {
-    state.hp = Math.min(state.maxHp, state.hp + val);
+    character.hp = Math.min(character.maxHp, character.hp + val);
     renderHP();
-    return state.hp;
+    SaveEngine.save();
+    return character.hp;
+  }
+
+  function loadState(savedData) {
+    character = { ...savedData };
+    renderAll();
+  }
+
+  function renderAll() {
+    document.getElementById('charDisplayName').textContent = character.name;
+    document.getElementById('charRaceGenderTag').textContent = `${character.gender} · ${character.raceName}`;
+    renderStats();
+    renderHP();
   }
 
   function renderStats() {
     const grid = document.getElementById('statsGrid');
-    grid.innerHTML = Object.entries(state.stats).map(([k, v]) => {
+    grid.innerHTML = Object.entries(character.stats).map(([k, v]) => {
       const mod = DndEngine.getModifier(v);
       const sign = mod >= 0 ? `+${mod}` : `${mod}`;
       return `
@@ -342,104 +534,211 @@ const CharacterSheet = (function() {
   function renderHP() {
     const hpBar = document.getElementById('hpBar');
     const hpText = document.getElementById('hpText');
-    const pct = (state.hp / state.maxHp) * 100;
+    const pct = Math.max(0, (character.hp / character.maxHp) * 100);
     hpBar.style.width = `${pct}%`;
-    hpText.textContent = `${state.hp} / ${state.maxHp}`;
+    hpText.textContent = `${character.hp} / ${character.maxHp}`;
   }
 
-  return { state, getMod, takeDamage, heal, renderStats, renderHP };
+  return { character, initNew, getMod, takeDamage, heal, loadState, renderAll };
 })();
 
 /**
  * ========================================================
- * 模組 3：DungeonMaster (隨機遭遇與事件生成模組)
+ * 模組 5：DungeonMaster (隨機地下城遭遇模組)
  * ========================================================
  */
 const DungeonMaster = (function() {
   const monsters = [
-    { name: "哥布林斥侯", ac: 11, hp: 7, atk: 2, dmg: 4, desc: "一隻揮舞生鏽匕首的綠皮哥布林從陰影撲出！" },
-    { name: "穴居食屍鬼", ac: 12, hp: 12, atk: 3, dmg: 6, desc: "帶著腐爛氣息的食屍鬼正撕扯著骸骨，轉頭盯上了你！" },
-    { name: "重裝半獸人督軍", ac: 14, hp: 18, atk: 4, dmg: 8, desc: "一名手持破甲巨斧的半獸人戰士擋住了通道，咆哮震天！" }
+    { name: "地城飢餓大老鼠", ac: 10, hp: 5, atk: 1, dmg: 3, desc: "一隻眼冒紅光的巨型變異老鼠在廢墟碎石中竄出！" },
+    { name: "迷途哥布林侍從", ac: 11, hp: 7, atk: 2, dmg: 4, desc: "一名手持破鈍劍的哥布林尖叫著朝你揮舞！" },
+    { name: "地宮骷髏兵", ac: 12, hp: 9, atk: 2, dmg: 5, desc: "一副白骨骷髏緩緩從棺木爬起，手中握著鏽蝕長矛！" }
   ];
 
   let currentMonster = null;
+  let currentEncounterText = "你踏入了幽暗的初心者試煉之穴。";
 
   function spawnEncounter() {
-    const isCombat = Math.random() > 0.35;
+    const isCombat = Math.random() > 0.4;
     if (isCombat) {
       currentMonster = { ...monsters[Math.floor(Math.random() * monsters.length)] };
-      return {
-        type: "COMBAT",
-        monster: currentMonster,
-        text: `【遭遇敵人】${currentMonster.desc}（護甲等級 AC: ${currentMonster.ac}, 生命: ${currentMonster.hp}）`
-      };
+      currentEncounterText = `【遭遇魔物】${currentMonster.desc} (AC: ${currentMonster.ac}, 生命: ${currentMonster.hp})`;
+      return { type: "COMBAT", monster: currentMonster, text: currentEncounterText };
     } else {
       currentMonster = null;
-      const traps = [
-        "你踩中了鬆動的石板，頭頂傳來機關巨石滾動的轟鳴聲！（需要敏捷 DEX 檢定）",
-        "一堵刻滿失落矮人文的暗門立在走道盡頭。（需要智力 INT 檢定解鎖）",
-        "廢棄祭壇前散落著被洗劫的符文寶箱。（可嘗試搜索）"
+      const events = [
+        "你察覺到前方走廊有一處隱密的絆線機關！（需要敏捷 DEX 檢定）",
+        "石牆上留有古代初心者留下的刻痕日誌。（需要智力 INT 檢定破譯）",
+        "你在倒塌的石像背後發現了一處稍作休息的避風處。"
       ];
-      return {
-        type: "EVENT",
-        text: `【環境發現】${traps[Math.floor(Math.random() * traps.length)]}`
-      };
+      currentEncounterText = `【探索發現】${events[Math.floor(Math.random() * events.length)]}`;
+      return { type: "EVENT", text: currentEncounterText };
     }
   }
 
   function getCurrentMonster() { return currentMonster; }
   function clearMonster() { currentMonster = null; }
+  function setEncounterText(txt) { currentEncounterText = txt; }
+  function getEncounterText() { return currentEncounterText; }
 
-  return { spawnEncounter, getCurrentMonster, clearMonster };
+  return { spawnEncounter, getCurrentMonster, clearMonster, setEncounterText, getEncounterText };
 })();
 
 /**
  * ========================================================
- * 模組 4：BattleLog (日誌呈現模組)
+ * 模組 6：BattleLog (終端日誌)
  * ========================================================
  */
 const BattleLog = (function() {
   const logBox = document.getElementById('gameLog');
 
-  function add(msg, type = "normal") {
+  function add(msg, type = "normal", save = true) {
     const el = document.createElement('div');
     el.className = `log-item log-${type}`;
     el.textContent = `[${new Date().toLocaleTimeString().slice(3, 8)}] ${msg}`;
     logBox.appendChild(el);
     logBox.scrollTop = logBox.scrollHeight;
+
+    if (save) SaveEngine.save();
   }
 
   function clear() {
     logBox.innerHTML = "";
+    SaveEngine.save();
   }
 
-  return { add, clear };
+  function getLogsHTML() {
+    return logBox.innerHTML;
+  }
+
+  function setLogsHTML(html) {
+    logBox.innerHTML = html;
+  }
+
+  return { add, clear, getLogsHTML, setLogsHTML };
 })();
 
 /**
  * ========================================================
- * 主控接合層：事件綁定與生命週期調度
+ * 模組 7：SaveEngine (localStorage 本地存檔引擎)
+ * ========================================================
+ */
+const SaveEngine = (function() {
+  const STORAGE_KEY = "DND_ROUGE_SAVE_V1";
+
+  function save() {
+    const data = {
+      hasActiveChar: true,
+      character: CharacterSheet.character,
+      encounterText: DungeonMaster.getEncounterText(),
+      monster: DungeonMaster.getCurrentMonster(),
+      logs: BattleLog.getLogsHTML()
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.warn("存檔寫入失敗", e);
+    }
+  }
+
+  function load() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function clearSave() {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
+  return { save, load, clearSave };
+})();
+
+/**
+ * ========================================================
+ * 主控制器：介面協調與事件監聽
  * ========================================================
  */
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. 初始化角色數值面板
-  CharacterSheet.renderStats();
-  CharacterSheet.renderHP();
+  const creationPanel = document.getElementById('creationPanel');
+  const activeProfileArea = document.getElementById('activeProfileArea');
+  const selectRace = document.getElementById('selectRace');
+  const raceBonusTip = document.getElementById('raceBonusTip');
+  const inputName = document.getElementById('inputName');
+  const selectGender = document.getElementById('selectGender');
+  const encounterDesc = document.getElementById('encounterDesc');
 
-  const encounterBox = document.getElementById('encounterDesc');
+  let currentFiveRaces = [];
 
-  // 2. 深入地城按鈕
-  document.getElementById('btnExplore').addEventListener('click', () => {
-    const encounter = DungeonMaster.spawnEncounter();
-    encounterBox.textContent = encounter.text;
-    BattleLog.add(encounter.text, "encounter");
+  // 初始化種族下拉選單 (隨機 5 種)
+  function initRaceOptions() {
+    currentFiveRaces = RaceModule.getRandomFiveRaces();
+    selectRace.innerHTML = currentFiveRaces.map(r => `
+      <option value="${r.id}">${r.name}</option>
+    `).join('');
+    updateRaceTip();
+  }
+
+  function updateRaceTip() {
+    const selected = RaceModule.getRaceById(selectRace.value);
+    raceBonusTip.textContent = `種族特性：${selected.tip}`;
+  }
+
+  selectRace.addEventListener('change', updateRaceTip);
+
+  // 隨機姓名按鈕
+  document.getElementById('btnRandomName').addEventListener('click', () => {
+    inputName.value = NameGenerator.generate(selectGender.value);
   });
 
-  // 3. 攻擊按鈕 (1d20 + STR mod)
+  // 確認創角
+  document.getElementById('btnConfirmCreate').addEventListener('click', () => {
+    const name = inputName.value.trim() || NameGenerator.generate(selectGender.value);
+    const gender = selectGender.value;
+    const raceObj = RaceModule.getRaceById(selectRace.value);
+
+    CharacterSheet.initNew(name, gender, raceObj);
+
+    creationPanel.style.display = 'none';
+    activeProfileArea.style.display = 'flex';
+
+    BattleLog.clear();
+    BattleLog.add(`【冒險啟程】${name}（${raceObj.name}，初心者）誕生了！帶著木劍出發！`, "crit");
+  });
+
+  // 重開新局按鈕
+  document.getElementById('btnResetGame').addEventListener('click', () => {
+    if (confirm("確定要拋棄當前進度重開新局嗎？所有地城紀錄將會清空。")) {
+      SaveEngine.clearSave();
+      initRaceOptions();
+      inputName.value = "";
+      DungeonMaster.clearMonster();
+      DungeonMaster.setEncounterText("你站在全新的地城入口，等待新的冒險者降臨...");
+      encounterDesc.textContent = DungeonMaster.getEncounterText();
+
+      activeProfileArea.style.display = 'none';
+      creationPanel.style.display = 'flex';
+      BattleLog.clear();
+      BattleLog.add("世界線已重置，請重新建立你的初心者角色。");
+    }
+  });
+
+  // 探索按鈕
+  document.getElementById('btnExplore').addEventListener('click', () => {
+    const encounter = DungeonMaster.spawnEncounter();
+    encounterDesc.textContent = encounter.text;
+    BattleLog.add(encounter.text, "encounter");
+    SaveEngine.save();
+  });
+
+  // 攻擊按鈕
   document.getElementById('btnAtk').addEventListener('click', () => {
     const monster = DungeonMaster.getCurrentMonster();
     if (!monster) {
-      BattleLog.add("當前沒有敵對目標可以攻擊，請先探索地城！");
+      BattleLog.add("目前眼前沒有魔物，請點擊「深入地城探索」！");
       return;
     }
 
@@ -447,71 +746,99 @@ document.addEventListener('DOMContentLoaded', () => {
     const check = DndEngine.d20Check(strMod, monster.ac);
 
     if (check.isCrit) {
-      const dmg = DndEngine.roll(8) + DndEngine.roll(8) + strMod;
+      const dmg = DndEngine.roll(6) + DndEngine.roll(6) + strMod;
       monster.hp -= dmg;
-      BattleLog.add(`💥 致命一擊（Natural 20）！揮出大成功，對 ${monster.name} 造成 ${dmg} 點重擊傷害！`, "crit");
+      BattleLog.add(`💥 命中要害（Natural 20）！新手木劍揮出奇蹟重擊，造成 ${dmg} 點傷害！`, "crit");
     } else if (check.isCritFail) {
-      BattleLog.add(`💀 大失敗（Natural 1）！你的武器脫手撞在石壁上，攻擊完全落空！`, "fail");
+      BattleLog.add(`💀 大失敗（Natural 1）！你在揮劍時腳底打滑，摔了個四腳朝天！`, "fail");
     } else if (check.isSuccess) {
-      const dmg = DndEngine.roll(8) + strMod;
+      const dmg = Math.max(1, DndEngine.roll(6) + strMod);
       monster.hp -= dmg;
-      BattleLog.add(`⚔️ 命中判定成功！(骰出 ${check.raw} + ${check.modifier} = ${check.total} vs AC ${check.dc})。造成 ${dmg} 點傷害。`, "success");
+      BattleLog.add(`⚔️ 命中判定成功！(骰出 ${check.raw}+${check.modifier}=${check.total} vs AC ${check.dc})，造成 ${dmg} 點傷害。`, "success");
     } else {
-      BattleLog.add(`🛡️ 攻擊偏斜！(骰出 ${check.total} vs AC ${check.dc}) 未能擊穿對手護甲。`);
+      BattleLog.add(`🛡️ 攻擊被格擋！(骰出 ${check.total} vs AC ${check.dc})。`);
     }
 
-    // 怪物陣亡判定或反擊
+    // 怪物血量判定
     if (monster.hp <= 0) {
-      BattleLog.add(`🏆 ${monster.name} 發出悲鳴倒地不起，戰鬥獲勝！`, "crit");
-      encounterBox.textContent = `戰鬥結束，地牢重新歸於平靜。你可以繼續探索。`;
+      BattleLog.add(`🏆 ${monster.name} 被你擊倒！獲得戰鬥勝利！`, "crit");
+      encounterDesc.textContent = "魔物已被擊潰，通道重歸安全。可繼續探索。";
       DungeonMaster.clearMonster();
     } else {
       // 怪物反擊
       const mAtk = DndEngine.roll(20) + monster.atk;
-      if (mAtk >= CharacterSheet.state.ac) {
+      if (mAtk >= CharacterSheet.character.ac) {
         CharacterSheet.takeDamage(monster.dmg);
-        BattleLog.add(`🩸 ${monster.name} 反擊命中！造成 ${monster.dmg} 點傷害。（剩餘 HP: ${CharacterSheet.state.hp}）`, "fail");
-        if (CharacterSheet.state.hp <= 0) {
-          BattleLog.add(`☠️ 你陷入了瀕死狀態（HP歸零）！冒險結束，請短休息重生。`, "fail");
+        BattleLog.add(`🩸 ${monster.name} 的反擊命中了你！受到 ${monster.dmg} 點傷害。(剩餘 HP: ${CharacterSheet.character.hp})`, "fail");
+        if (CharacterSheet.character.hp <= 0) {
+          BattleLog.add(`☠️ 你耗盡了體力倒在迷宮中... 冒險暫告一段落，請休息或重開新局！`, "fail");
         }
       } else {
-        BattleLog.add(`🛡️ 你靈活舉盾擋下了 ${monster.name} 的反擊！`);
+        BattleLog.add(`🛡️ 你勉強用木盾擋開了 ${monster.name} 的揮擊！`);
       }
     }
+    SaveEngine.save();
   });
 
-  // 4. 敏捷迴避 (DEX 檢定)
+  // 閃避翻滾 (DEX)
   document.getElementById('btnEvade').addEventListener('click', () => {
     const dexMod = CharacterSheet.getMod('DEX');
     const check = DndEngine.d20Check(dexMod, 12);
     if (check.isSuccess) {
-      BattleLog.add(`🤸 敏捷檢定成功 (${check.total} vs DC 12)！你俐落地翻滾避開了潛在威脅。`, "success");
+      BattleLog.add(`🤸 敏捷檢定成功 (${check.total} vs DC 12)！靈活翻滾規避了危險。`, "success");
     } else {
-      BattleLog.add(`💢 敏捷檢定失敗 (${check.total} vs DC 12)！你失去了平衡。`, "fail");
+      BattleLog.add(`💢 敏捷檢定失敗 (${check.total} vs DC 12)！身體有些笨拙。`, "fail");
     }
   });
 
-  // 5. 智力解鎖/調查 (INT 檢定)
+  // 調查機關 (INT)
   document.getElementById('btnSearch').addEventListener('click', () => {
     const intMod = CharacterSheet.getMod('INT');
-    const check = DndEngine.d20Check(intMod, 13);
+    const check = DndEngine.d20Check(intMod, 12);
     if (check.isSuccess) {
-      BattleLog.add(`💡 調查檢定成功 (${check.total} vs DC 13)！你識破了暗門邊緣的微弱刮痕。`, "success");
+      BattleLog.add(`💡 調查成功 (${check.total} vs DC 12)！你細心摸索出磚塊背後的小暗格。`, "success");
     } else {
-      BattleLog.add(`❓ 調查檢定失敗 (${check.total} vs DC 13)！你什麼異狀都沒有發現。`);
+      BattleLog.add(`❓ 調查失敗 (${check.total} vs DC 12)！摸了一手塵土。`);
     }
   });
 
-  // 6. 短休息恢復
+  // 短休息
   document.getElementById('btnRest').addEventListener('click', () => {
-    const healed = CharacterSheet.heal(DndEngine.roll(8) + CharacterSheet.getMod('CON'));
-    BattleLog.add(`🏕️ 你搭起營火短休息，恢復了生命值（目前 HP: ${healed}）。`, "success");
+    const healed = CharacterSheet.heal(DndEngine.roll(6) + CharacterSheet.getMod('CON'));
+    BattleLog.add(`🏕️ 你原地坐下啃乾糧休息，恢復了體力。(目前 HP: ${healed})`, "success");
   });
 
-  // 清空紀錄
+  // 清空日誌
   document.getElementById('btnClearLog').addEventListener('click', () => {
     BattleLog.clear();
   });
+
+  // ========================================================
+  // 啟動自我檢查：讀取進度或初始化創角
+  // ========================================================
+  const savedState = SaveEngine.load();
+  if (savedState && savedState.hasActiveChar && savedState.character) {
+    // 恢復先前存檔
+    CharacterSheet.loadState(savedState.character);
+    encounterDesc.textContent = savedState.encounterText || "地城走廊一片寂靜。";
+    DungeonMaster.setEncounterText(savedState.encounterText);
+    if (savedState.monster) {
+      // 恢復怪物戰鬥狀態
+      DungeonMaster.spawnEncounter(); // 佔位
+    }
+    if (savedState.logs) {
+      BattleLog.setLogsHTML(savedState.logs);
+    }
+    creationPanel.style.display = 'none';
+    activeProfileArea.style.display = 'flex';
+    BattleLog.add("🔄 冒險進度已自動自本地存檔無縫復原！", "encounter", false);
+  } else {
+    // 首次進入：初始化 5 種族隨機推薦選單
+    initRaceOptions();
+    inputName.value = NameGenerator.generate("男");
+    creationPanel.style.display = 'flex';
+    activeProfileArea.style.display = 'none';
+  }
 });
 </script>
 
