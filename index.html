@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>D&D 5e: 永恆地城冒險模組 (初心者起步版)</title>
+  <title>D&D 5e: 永恆地城冒險模組 (終極無縫整合版)</title>
   <style>
     :root {
       --bg-main: #0c0d12;
@@ -11,6 +11,7 @@
       --card-border: #2b3040;
       --accent-gold: #f59e0b;
       --accent-crimson: #ef4444;
+      --accent-stamina: #10b981;
       --accent-mana: #3b82f6;
       --text-main: #f3f4f6;
       --text-muted: #9ca3af;
@@ -55,7 +56,7 @@
     }
 
     .panel-header {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 800;
       color: var(--accent-gold);
       border-bottom: 1px solid var(--card-border);
@@ -65,7 +66,7 @@
       align-items: center;
     }
 
-    /* 創角面板樣式 */
+    /* 創角面板 */
     .creation-box {
       background: #191d2b;
       border: 1px solid var(--card-border);
@@ -108,16 +109,16 @@
       border-color: var(--accent-gold);
     }
 
-    /* 角色狀態卡 */
+    /* 角色狀態與三段進度條 */
     .char-profile {
       display: flex;
       gap: 12px;
-      align-items: center;
+      align-items: flex-start;
     }
 
     .avatar {
-      width: 54px;
-      height: 54px;
+      width: 58px;
+      height: 58px;
       background: #202534;
       border: 2px solid var(--accent-gold);
       border-radius: 8px;
@@ -125,24 +126,72 @@
       align-items: center;
       justify-content: center;
       font-size: 1.8rem;
+      flex-shrink: 0;
     }
 
-    .hp-bar-container {
+    .bar-wrapper {
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .bar-line {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .bar-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .bar-container {
       background: #252a3a;
-      border-radius: 8px;
-      height: 16px;
+      border-radius: 6px;
+      height: 9px;
       width: 100%;
       overflow: hidden;
-      margin-top: 4px;
     }
 
-    .hp-bar-fill {
+    .bar-fill-hp {
       background: linear-gradient(90deg, #b91c1c, #ef4444);
       height: 100%;
       width: 100%;
-      transition: width 0.3s ease;
+      transition: width 0.25s ease;
     }
 
+    .bar-fill-sta {
+      background: linear-gradient(90deg, #059669, #10b981);
+      height: 100%;
+      width: 100%;
+      transition: width 0.25s ease;
+    }
+
+    .bar-fill-exp {
+      background: linear-gradient(90deg, #d97706, #f59e0b);
+      height: 100%;
+      width: 0%;
+      transition: width 0.25s ease;
+    }
+
+    /* 自由配點橫幅 */
+    .point-alloc-banner {
+      background: #3b2a0c;
+      border: 1px solid var(--accent-gold);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: #fef08a;
+    }
+
+    /* 屬性格點 */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -155,11 +204,105 @@
       border-radius: 8px;
       text-align: center;
       padding: 8px;
+      position: relative;
     }
 
     .stat-name { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
     .stat-val { font-size: 1.2rem; font-weight: 800; color: #fff; }
     .stat-mod { font-size: 0.8rem; color: var(--accent-gold); font-weight: 700; }
+
+    .btn-stat-add {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: var(--accent-gold);
+      color: #000;
+      border: none;
+      border-radius: 4px;
+      width: 20px;
+      height: 20px;
+      font-weight: 900;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: none;
+    }
+    .btn-stat-add:hover { filter: brightness(1.2); }
+
+    /* 魔物戰術 HUD */
+    .monster-hud-card {
+      background: linear-gradient(180deg, #251216 0%, #160a0d 100%);
+      border: 1px solid #991b1b;
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .monster-hud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .monster-name-tag {
+      font-weight: 800;
+      color: #f87171;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .monster-ac-badge {
+      background: #3f1318;
+      color: #fca5a5;
+      border: 1px solid #7f1d1d;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .monster-hp-container {
+      background: #2a1115;
+      border-radius: 6px;
+      height: 10px;
+      width: 100%;
+      overflow: hidden;
+      border: 1px solid #501920;
+    }
+
+    .monster-hp-bar {
+      background: linear-gradient(90deg, #dc2626, #ef4444);
+      height: 100%;
+      width: 100%;
+      transition: width 0.25s ease;
+    }
+
+    .monster-hp-text {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fca5a5;
+    }
+
+    .monster-skills-box {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .skill-pill {
+      background: #39171c;
+      border: 1px solid #5f2029;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 0.68rem;
+      color: #fed7aa;
+    }
 
     /* 遭遇與場景卡 */
     .encounter-box {
@@ -168,7 +311,7 @@
       border-radius: 8px;
       padding: 12px;
       font-size: 0.9rem;
-      min-height: 70px;
+      min-height: 60px;
     }
 
     /* 按鈕樣式 */
@@ -212,7 +355,6 @@
       border-color: #7f1d1d;
       color: #fca5a5;
     }
-
     button.btn-danger:hover {
       background: #dc2626;
       color: #fff;
@@ -224,7 +366,7 @@
       border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 10px;
-      height: 440px;
+      height: 480px;
       overflow-y: auto;
       font-family: monospace;
       font-size: 0.85rem;
@@ -243,19 +385,20 @@
     .log-fail { border-left-color: var(--accent-crimson); color: #fca5a5; }
     .log-success { border-left-color: #10b981; color: #6ee7b7; }
     .log-encounter { border-left-color: var(--accent-mana); color: #93c5fd; }
+    .log-levelup { border-left-color: #eab308; color: #facc15; font-weight: 800; background: rgba(234, 179, 8, 0.08); }
   </style>
 </head>
 <body>
 
 <div class="dnd-container">
-  <!-- 左側：角色面版 ＋ 創角區 ＋ 行動 -->
+  <!-- 左側：角色狀態 ＋ 魔物 HUD ＋ 操作 -->
   <div class="panel">
     <div class="panel-header">
       <span>冒險者檔案</span>
       <button class="btn-act btn-danger" style="padding: 4px 10px; font-size: 0.75rem;" id="btnResetGame">🔄 重開新局</button>
     </div>
 
-    <!-- 創角面板 (未創角或重開新局時顯示) -->
+    <!-- 創角面板 -->
     <div class="creation-box" id="creationPanel">
       <div style="font-weight: 700; color: var(--accent-gold); font-size: 0.95rem;">新冒險者登錄</div>
       
@@ -277,66 +420,119 @@
       </div>
 
       <div class="form-group">
-        <label>種族 (本輪隨機推薦 5 種特色種族)</label>
-        <select id="selectRace">
-          <!-- 由 RaceModule 動態注入 5 種推薦 -->
-        </select>
+        <label>種族 (隨機推薦 5 種特色種族)</label>
+        <select id="selectRace"></select>
         <div id="raceBonusTip" style="font-size: 0.75rem; color: #93c5fd; margin-top: 2px;"></div>
       </div>
 
       <button class="btn-act btn-explore" id="btnConfirmCreate" style="margin-top: 4px;">✨ 踏上冒險旅程</button>
     </div>
 
-    <!-- 角色現有狀態區 (創角後顯示) -->
-    <div id="activeProfileArea" style="display: none; flex-direction: column; gap: 12px;">
+    <!-- 冒險者活躍面板 -->
+    <div id="activeProfileArea" style="display: none; flex-direction: column; gap: 10px;">
       <div class="char-profile">
         <div class="avatar" id="displayAvatar">🛡️</div>
         <div style="flex: 1;">
-          <div style="display: flex; align-items: baseline; gap: 6px;">
-            <span style="font-weight: 800; font-size: 1.1rem;" id="charDisplayName">--</span>
-            <span style="font-size: 0.8rem; color: var(--accent-gold);" id="charRaceGenderTag">--</span>
+          <div style="display: flex; align-items: baseline; justify-content: space-between;">
+            <div style="display: flex; align-items: baseline; gap: 6px;">
+              <span style="font-weight: 800; font-size: 1.1rem;" id="charDisplayName">--</span>
+              <span style="font-size: 0.8rem; color: var(--accent-gold);" id="charRaceGenderTag">--</span>
+            </div>
+            <span style="font-size: 0.85rem; font-weight: 800; color: var(--accent-gold);" id="charLevelTag">Lv. 1 初心者</span>
           </div>
-          <div style="font-size: 0.8rem; color: var(--text-muted);">職業：初心者 (Novice) | 等級 1</div>
-          <div class="hp-bar-container">
-            <div class="hp-bar-fill" id="hpBar"></div>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 3px;">
-            <span>HP 生命值</span>
-            <span id="hpText">10 / 10</span>
+
+          <!-- 三段條：HP、耐力 STA、經驗 EXP -->
+          <div class="bar-wrapper">
+            <div class="bar-line">
+              <div class="bar-info">
+                <span style="color: #fca5a5;">❤️ 生命值 (HP)</span>
+                <span id="hpText">10 / 10</span>
+              </div>
+              <div class="bar-container">
+                <div class="bar-fill-hp" id="hpBar"></div>
+              </div>
+            </div>
+
+            <div class="bar-line">
+              <div class="bar-info">
+                <span style="color: #6ee7b7;">⚡ 耐力值 (STA)</span>
+                <span id="staText">20 / 20</span>
+              </div>
+              <div class="bar-container">
+                <div class="bar-fill-sta" id="staBar"></div>
+              </div>
+            </div>
+
+            <div class="bar-line">
+              <div class="bar-info">
+                <span style="color: #fde047;">✨ 經驗值 (EXP)</span>
+                <span id="expText">0 / 100</span>
+              </div>
+              <div class="bar-container">
+                <div class="bar-fill-exp" id="expBar"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 六大屬性數值卡 -->
+      <!-- 自由配點提示橫幅 -->
+      <div class="point-alloc-banner" id="pointAllocBanner">
+        <span>🎉 升級獎勵！剩餘點數：<strong id="availPointsText" style="color:#fff; font-size:1rem;">10</strong> 點</span>
+        <span style="font-size: 0.75rem; opacity: 0.85;">點擊屬性右上角 [+] 分配</span>
+      </div>
+
+      <!-- 六大屬性格 (附帶 [+] 配點按鈕) -->
       <div class="stats-grid" id="statsGrid"></div>
 
+      <!-- 魔物戰術 HUD (戰鬥時動態呈現) -->
+      <div id="monsterHudArea" style="display: none;">
+        <div class="monster-hud-card">
+          <div class="monster-hud-header">
+            <div class="monster-name-tag">
+              <span>💀</span>
+              <span id="hudMonsterName">未知魔物</span>
+            </div>
+            <div class="monster-ac-badge" id="hudMonsterAc">護甲 AC: 10</div>
+          </div>
+          <div class="monster-hp-container">
+            <div class="monster-hp-bar" id="hudMonsterHpBar"></div>
+          </div>
+          <div class="monster-hp-text">
+            <span>魔物生命狀態</span>
+            <span id="hudMonsterHpText">0 / 0 HP</span>
+          </div>
+          <div class="monster-skills-box" id="hudMonsterSkills"></div>
+        </div>
+      </div>
+
       <!-- 當前地下城場景 -->
-      <div class="panel-header" style="margin-top: 4px;">
+      <div class="panel-header" style="margin-top: 2px;">
         <span>目前地城遭遇</span>
       </div>
       <div class="encounter-box" id="encounterDesc">
-        你握緊了初心者木劍，踏入了幽暗的地下城入口...
+        你握緊了初心者木劍，踏入了幽暗的試煉迷宮...
       </div>
 
       <!-- 冒險決策按鈕 -->
       <div class="action-grid">
         <button class="btn-act btn-explore" id="btnExplore">🚪 深入地城探索 (隨機遭遇)</button>
-        <button class="btn-act" id="btnAtk">⚔️ 揮劍攻擊 (STR)</button>
-        <button class="btn-act" id="btnEvade">💨 翻滾閃避 (DEX)</button>
+        <button class="btn-act" id="btnAtk">⚔️ 揮劍攻擊 (-3耐力)</button>
+        <button class="btn-act" id="btnEvade">💨 翻滾閃避 (-2耐力)</button>
         <button class="btn-act" id="btnSearch">🔍 調查機關 (INT)</button>
-        <button class="btn-act" id="btnRest">🏕️ 短休息 (恢復 HP)</button>
+        <button class="btn-act" id="btnRest">🏕️ 短休息 (耐力全滿/回血)</button>
       </div>
     </div>
   </div>
 
-  <!-- 右側：地城日誌 Log -->
+  <!-- 右側：終端日誌 -->
   <div class="panel">
     <div class="panel-header">
       <span>冒險日誌 (Battle & Event Log)</span>
       <button style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.75rem;" id="btnClearLog">清空</button>
     </div>
     <div class="console-log" id="gameLog">
-      <div class="log-item">地下城記錄模組已就緒。</div>
+      <div class="log-item">地下城記錄核心已就緒。</div>
     </div>
   </div>
 </div>
@@ -344,18 +540,34 @@
 <script>
 /**
  * ========================================================
- * 模組 1：DndEngine (核心規則與隨機數計算)
+ * 模組 0：GameEvents (輕量事件總線 - 根絕死當核心)
+ * ========================================================
+ */
+const GameEvents = (function() {
+  const listeners = {};
+  function on(event, callback) {
+    if (!listeners[event]) listeners[event] = [];
+    listeners[event].push(callback);
+  }
+  function emit(event, data) {
+    if (!listeners[event]) return;
+    listeners[event].forEach(cb => cb(data));
+  }
+  return { on, emit };
+})();
+
+/**
+ * ========================================================
+ * 模組 1：DndEngine (D&D 5E 規則與骰點計算)
  * ========================================================
  */
 const DndEngine = (function() {
-  function roll(diceSides) {
-    return Math.floor(Math.random() * diceSides) + 1;
+  function roll(sides) {
+    return Math.floor(Math.random() * sides) + 1;
   }
-
   function getModifier(score) {
     return Math.floor((score - 10) / 2);
   }
-
   function d20Check(modifier = 0, dc = 12) {
     const raw = roll(20);
     const total = raw + modifier;
@@ -364,40 +576,38 @@ const DndEngine = (function() {
     const isSuccess = isCrit || (!isCritFail && total >= dc);
     return { raw, modifier, total, dc, isCrit, isCritFail, isSuccess };
   }
-
   return { roll, getModifier, d20Check };
 })();
 
 /**
  * ========================================================
- * 模組 2：RaceModule (20大奇幻種族庫與推薦推薦引擎)
+ * 模組 2：RaceModule (20 奇幻種族庫與生命骰定義)
  * ========================================================
  */
 const RaceModule = (function() {
   const allRaces = [
-    { id: "human", name: "人類 (Human)", bonus: { STR: 1, DEX: 1, CON: 1, INT: 1, WIS: 1, CHA: 1 }, tip: "全屬性 +1，適應力極強" },
-    { id: "high_elf", name: "高等精靈 (High Elf)", bonus: { DEX: 2, INT: 1 }, tip: "DEX+2, INT+1，敏銳而具奧術天賦" },
-    { id: "wood_elf", name: "木精靈 (Wood Elf)", bonus: { DEX: 2, WIS: 1 }, tip: "DEX+2, WIS+1，身手敏捷、洞察力高" },
-    { id: "mountain_dwarf", name: "山脈矮人 (Mountain Dwarf)", bonus: { STR: 2, CON: 2 }, tip: "STR+2, CON+2，體魄強壯堅韌" },
-    { id: "hill_dwarf", name: "丘陵矮人 (Hill Dwarf)", bonus: { CON: 2, WIS: 1 }, tip: "CON+2, WIS+1，強健且富有感知" },
-    { id: "lightfoot_halfling", name: "輕足半身人 (Halfling)", bonus: { DEX: 2, CHA: 1 }, tip: "DEX+2, CHA+1，天性靈巧、擅長社交" },
-    { id: "dragonborn", name: "龍裔 (Dragonborn)", bonus: { STR: 2, CHA: 1 }, tip: "STR+2, CHA+1，身懷巨龍之威" },
-    { id: "tiefling", name: "提夫林 (Tiefling)", bonus: { CHA: 2, INT: 1 }, tip: "CHA+2, INT+1，具有深淵血脈與魔性魅力" },
-    { id: "half_orc", name: "半獸人 (Half-Orc)", bonus: { STR: 2, CON: 1 }, tip: "STR+2, CON+1，爆發力與兇蠻生存本能" },
-    { id: "rock_gnome", name: "岩侏儒 (Rock Gnome)", bonus: { INT: 2, CON: 1 }, tip: "INT+2, CON+1，好奇心旺盛且精通發明" },
-    { id: "half_elf", name: "半精靈 (Half-Elf)", bonus: { CHA: 2, DEX: 1, CON: 1 }, tip: "CHA+2, DEX+1, CON+1，優雅兼具堅毅" },
-    { id: "goliath", name: "巨靈裔 (Goliath)", bonus: { STR: 2, CON: 1 }, tip: "STR+2, CON+1，如崇山峻嶺般的高大體格" },
-    { id: "aasimar", name: "阿斯莫/天界裔 (Aasimar)", bonus: { CHA: 2, WIS: 1 }, tip: "CHA+2, WIS+1，帶有神聖天界的祝福光環" },
-    { id: "tabaxi", name: "虎人/貓人 (Tabaxi)", bonus: { DEX: 2, CHA: 1 }, tip: "DEX+2, CHA+1，極致敏捷與無窮好奇心" },
-    { id: "firbolg", name: "弗伯格/森巨人 (Firbolg)", bonus: { WIS: 2, STR: 1 }, tip: "WIS+2, STR+1，森林的寧靜守護者" },
-    { id: "kenku", name: "肯庫/鴉人 (Kenku)", bonus: { DEX: 2, WIS: 1 }, tip: "DEX+2, WIS+1，擅長模仿與潛伏潛行" },
-    { id: "lizardfolk", name: "蜥蜴人 (Lizardfolk)", bonus: { CON: 2, WIS: 1 }, tip: "CON+2, WIS+1，冷血無情的野性生存者" },
-    { id: "triton", name: "海靈/特里同 (Triton)", bonus: { STR: 1, CON: 1, CHA: 1 }, tip: "STR+1, CON+1, CHA+1，深海霸主一族" },
-    { id: "kobold", name: "狗頭人 (Kobold)", bonus: { DEX: 2, INT: 1 }, tip: "DEX+2, INT+1，身軀矮小但狡詐機警" },
-    { id: "genasi", name: "元素裔 (Genasi)", bonus: { CON: 2, INT: 1 }, tip: "CON+2, INT+1，體內流淌著原始元素之力" }
+    { id: "human", name: "人類 (Human)", bonus: { STR: 1, DEX: 1, CON: 1, INT: 1, WIS: 1, CHA: 1 }, hpDie: 10, tip: "全屬性+1，每級生命成長 d10" },
+    { id: "high_elf", name: "高等精靈 (High Elf)", bonus: { DEX: 2, INT: 1 }, hpDie: 8, tip: "DEX+2, INT+1，每級生命成長 d8" },
+    { id: "wood_elf", name: "木精靈 (Wood Elf)", bonus: { DEX: 2, WIS: 1 }, hpDie: 8, tip: "DEX+2, WIS+1，每級生命成長 d8" },
+    { id: "mountain_dwarf", name: "山脈矮人 (Mountain Dwarf)", bonus: { STR: 2, CON: 2 }, hpDie: 12, tip: "STR+2, CON+2，巨型體魄每級生命成長 d12" },
+    { id: "hill_dwarf", name: "丘陵矮人 (Hill Dwarf)", bonus: { CON: 2, WIS: 1 }, hpDie: 10, tip: "CON+2, WIS+1，強健身形每級生命成長 d10" },
+    { id: "lightfoot_halfling", name: "半身人 (Halfling)", bonus: { DEX: 2, CHA: 1 }, hpDie: 6, tip: "DEX+2, CHA+1，靈巧型每級生命成長 d6" },
+    { id: "dragonborn", name: "龍裔 (Dragonborn)", bonus: { STR: 2, CHA: 1 }, hpDie: 10, tip: "STR+2, CHA+1，真龍體質每級生命成長 d10" },
+    { id: "tiefling", name: "提夫林 (Tiefling)", bonus: { CHA: 2, INT: 1 }, hpDie: 8, tip: "CHA+2, INT+1，惡魔血脈每級生命成長 d8" },
+    { id: "half_orc", name: "半獸人 (Half-Orc)", bonus: { STR: 2, CON: 1 }, hpDie: 12, tip: "STR+2, CON+1，狂暴強韌每級生命成長 d12" },
+    { id: "rock_gnome", name: "岩侏儒 (Rock Gnome)", bonus: { INT: 2, CON: 1 }, hpDie: 6, tip: "INT+2, CON+1，小巧體格每級生命成長 d6" },
+    { id: "half_elf", name: "半精靈 (Half-Elf)", bonus: { CHA: 2, DEX: 1, CON: 1 }, hpDie: 8, tip: "CHA+2, DEX+1, CON+1，優雅每級生命成長 d8" },
+    { id: "goliath", name: "巨靈裔 (Goliath)", bonus: { STR: 2, CON: 1 }, hpDie: 12, tip: "STR+2, CON+1，山嶽巨體每級生命成長 d12" },
+    { id: "aasimar", name: "天界裔 (Aasimar)", bonus: { CHA: 2, WIS: 1 }, hpDie: 8, tip: "CHA+2, WIS+1，天界聖光每級生命成長 d8" },
+    { id: "tabaxi", name: "虎人/貓人 (Tabaxi)", bonus: { DEX: 2, CHA: 1 }, hpDie: 8, tip: "DEX+2, CHA+1，極限敏捷每級生命成長 d8" },
+    { id: "firbolg", name: "弗伯格 (Firbolg)", bonus: { WIS: 2, STR: 1 }, hpDie: 10, tip: "WIS+2, STR+1，森林守衛每級生命成長 d10" },
+    { id: "kenku", name: "肯庫/鴉人 (Kenku)", bonus: { DEX: 2, WIS: 1 }, hpDie: 6, tip: "DEX+2, WIS+1，潛伏靈動每級生命成長 d6" },
+    { id: "lizardfolk", name: "蜥蜴人 (Lizardfolk)", bonus: { CON: 2, WIS: 1 }, hpDie: 12, tip: "CON+2, WIS+1，冷血硬皮每級生命成長 d12" },
+    { id: "triton", name: "海靈 (Triton)", bonus: { STR: 1, CON: 1, CHA: 1 }, hpDie: 10, tip: "STR+1, CON+1, CHA+1，深海鬥士每級生命成長 d10" },
+    { id: "kobold", name: "狗頭人 (Kobold)", bonus: { DEX: 2, INT: 1 }, hpDie: 6, tip: "DEX+2, INT+1，矮小狡詐每級生命成長 d6" },
+    { id: "genasi", name: "元素裔 (Genasi)", bonus: { CON: 2, INT: 1 }, hpDie: 8, tip: "CON+2, INT+1，原初元素每級生命成長 d8" }
   ];
 
-  // 隨機抽選 5 種不重複的推薦種族
   function getRandomFiveRaces() {
     const shuffled = [...allRaces].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, 5);
@@ -412,7 +622,7 @@ const RaceModule = (function() {
 
 /**
  * ========================================================
- * 模組 3：NameGenerator (隨機奇幻姓名生成器)
+ * 模組 3：NameGenerator (隨機奇幻姓名生成)
  * ========================================================
  */
 const NameGenerator = (function() {
@@ -421,7 +631,6 @@ const NameGenerator = (function() {
     "女": ["愛麗絲", "碧翠絲", "賽蓮娜", "黛安娜", "艾蓮娜", "費歐娜", "吉妮薇", "伊索德", "露娜", "薇薇安"],
     "非二元": ["阿斯特", "灰羽", "莫斯", "瑞文", "索爾", "文森", "微風", "影刃", "白霜", "琥珀"]
   };
-
   const familyTitles = ["破曉者", "影行者", "鐵壁", "霜語", "炎心", "尋路者", "風暴", "深谷", "星痕", "綠葉"];
 
   function generate(gender = "男") {
@@ -430,17 +639,15 @@ const NameGenerator = (function() {
     const title = familyTitles[Math.floor(Math.random() * familyTitles.length)];
     return `${fname} · ${title}`;
   }
-
   return { generate };
 })();
 
 /**
  * ========================================================
- * 模組 4：CharacterSheet (角色屬性與初心者狀態)
+ * 模組 4：CharacterSheet (HP / STA / EXP / 自由配點)
  * ========================================================
  */
 const CharacterSheet = (function() {
-  // 初心者基礎範本 (全能力基準 10)
   const baseAttributes = { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 };
 
   let character = {
@@ -448,11 +655,17 @@ const CharacterSheet = (function() {
     gender: "男",
     raceId: "human",
     raceName: "人類",
+    hpDie: 10,
     class: "初心者",
     level: 1,
-    maxHp: 10,
-    hp: 10,
-    ac: 11, // 基礎 10 + 初始護甲/敏捷
+    exp: 0,
+    maxExp: 100,
+    maxHp: 12,
+    hp: 12,
+    maxSta: 20,
+    sta: 20,
+    ac: 10,
+    statPoints: 0,
     stats: { ...baseAttributes }
   };
 
@@ -461,24 +674,26 @@ const CharacterSheet = (function() {
     character.gender = gender;
     character.raceId = raceObj.id;
     character.raceName = raceObj.name.split(' ')[0];
+    character.hpDie = raceObj.hpDie || 8;
     character.class = "初心者";
     character.level = 1;
+    character.exp = 0;
+    character.maxExp = 100;
+    character.statPoints = 0;
 
-    // 重新計算屬性：基準 10 + 種族修正
     const newStats = { ...baseAttributes };
-    Object.entries(raceObj.bonus).forEach(([stat, val]) => {
-      if (newStats[stat] !== undefined) {
-        newStats[stat] += val;
-      }
+    Object.entries(raceObj.bonus).forEach(([k, v]) => {
+      if (newStats[k] !== undefined) newStats[k] += v;
     });
     character.stats = newStats;
 
-    // 初心者生命計算：8(d8生命骰最高值) + 體質調整值
     const conMod = DndEngine.getModifier(character.stats.CON);
-    character.maxHp = Math.max(6, 8 + conMod);
+    character.maxHp = Math.max(8, character.hpDie + conMod);
     character.hp = character.maxHp;
 
-    // 護甲等級 AC = 10 + DEX 調整值
+    character.maxSta = 20;
+    character.sta = 20;
+
     const dexMod = DndEngine.getModifier(character.stats.DEX);
     character.ac = 10 + dexMod;
 
@@ -486,22 +701,87 @@ const CharacterSheet = (function() {
     SaveEngine.save();
   }
 
-  function getMod(statKey) {
-    return DndEngine.getModifier(character.stats[statKey]);
+  function gainExp(amount) {
+    character.exp += amount;
+    let leveledUp = false;
+
+    while (character.exp >= character.maxExp) {
+      character.exp -= character.maxExp;
+      character.level += 1;
+      character.maxExp = Math.floor(character.maxExp * 1.5);
+      leveledUp = true;
+
+      // 1. 耐力每級 +5
+      character.maxSta += 5;
+      character.sta = character.maxSta;
+
+      // 2. 生命依種族生命骰提升
+      const conMod = DndEngine.getModifier(character.stats.CON);
+      const hpRoll = DndEngine.roll(character.hpDie);
+      const hpGain = Math.max(3, hpRoll + conMod);
+      character.maxHp += hpGain;
+      character.hp = character.maxHp;
+
+      // 3. 固定發放 10 點自由分配點數
+      character.statPoints += 10;
+
+      BattleLog.add(`🌟【升級達成！】恭喜邁入等級 Lv.${character.level}！`, "levelup");
+      BattleLog.add(`⚡ 耐力上限 +5 (當前: ${character.maxSta})，【${character.raceName}】體質生命骰使 HP 提升 +${hpGain} (當前: ${character.maxHp})！`, "levelup");
+      BattleLog.add(`🎁 獲得 10 點自由能力點數，可直接點擊屬性面板 [+] 按鈕分配！`, "levelup");
+    }
+
+    renderAll();
+    SaveEngine.save();
+    return leveledUp;
+  }
+
+  function allocatePoint(statKey) {
+    if (character.statPoints <= 0) return;
+    character.stats[statKey] += 1;
+    character.statPoints -= 1;
+
+    if (statKey === "CON") {
+      character.maxHp += 1;
+      character.hp += 1;
+    }
+    if (statKey === "DEX") {
+      character.ac = 10 + DndEngine.getModifier(character.stats.DEX);
+    }
+
+    renderAll();
+    SaveEngine.save();
+  }
+
+  function consumeSta(amount) {
+    if (character.sta < amount) return false;
+    character.sta -= amount;
+    renderBars();
+    SaveEngine.save();
+    return true;
+  }
+
+  function restoreSta() {
+    character.sta = character.maxSta;
+    renderBars();
+    SaveEngine.save();
   }
 
   function takeDamage(val) {
     character.hp = Math.max(0, character.hp - val);
-    renderHP();
+    renderBars();
     SaveEngine.save();
     return character.hp;
   }
 
   function heal(val) {
     character.hp = Math.min(character.maxHp, character.hp + val);
-    renderHP();
+    renderBars();
     SaveEngine.save();
     return character.hp;
+  }
+
+  function getMod(statKey) {
+    return DndEngine.getModifier(character.stats[statKey]);
   }
 
   function loadState(savedData) {
@@ -512,17 +792,45 @@ const CharacterSheet = (function() {
   function renderAll() {
     document.getElementById('charDisplayName').textContent = character.name;
     document.getElementById('charRaceGenderTag').textContent = `${character.gender} · ${character.raceName}`;
+    document.getElementById('charLevelTag').textContent = `Lv. ${character.level} 初心者`;
+    renderBars();
     renderStats();
-    renderHP();
+    renderPointBanner();
+  }
+
+  function renderBars() {
+    // HP
+    const hpBar = document.getElementById('hpBar');
+    const hpText = document.getElementById('hpText');
+    const hpPct = Math.max(0, (character.hp / character.maxHp) * 100);
+    hpBar.style.width = `${hpPct}%`;
+    hpText.textContent = `${character.hp} / ${character.maxHp}`;
+
+    // 耐力 STA
+    const staBar = document.getElementById('staBar');
+    const staText = document.getElementById('staText');
+    const staPct = Math.max(0, (character.sta / character.maxSta) * 100);
+    staBar.style.width = `${staPct}%`;
+    staText.textContent = `${character.sta} / ${character.maxSta}`;
+
+    // 經驗 EXP
+    const expBar = document.getElementById('expBar');
+    const expText = document.getElementById('expText');
+    const expPct = Math.max(0, (character.exp / character.maxExp) * 100);
+    expBar.style.width = `${expPct}%`;
+    expText.textContent = `${character.exp} / ${character.maxExp}`;
   }
 
   function renderStats() {
     const grid = document.getElementById('statsGrid');
+    const hasPoints = character.statPoints > 0;
+
     grid.innerHTML = Object.entries(character.stats).map(([k, v]) => {
       const mod = DndEngine.getModifier(v);
       const sign = mod >= 0 ? `+${mod}` : `${mod}`;
       return `
         <div class="stat-box">
+          <button class="btn-stat-add" style="display: ${hasPoints ? 'block' : 'none'};" onclick="CharacterSheet.allocatePoint('${k}')">+</button>
           <div class="stat-name">${k}</div>
           <div class="stat-val">${v}</div>
           <div class="stat-mod">${sign}</div>
@@ -531,61 +839,150 @@ const CharacterSheet = (function() {
     }).join('');
   }
 
-  function renderHP() {
-    const hpBar = document.getElementById('hpBar');
-    const hpText = document.getElementById('hpText');
-    const pct = Math.max(0, (character.hp / character.maxHp) * 100);
-    hpBar.style.width = `${pct}%`;
-    hpText.textContent = `${character.hp} / ${character.maxHp}`;
+  function renderPointBanner() {
+    const banner = document.getElementById('pointAllocBanner');
+    const ptText = document.getElementById('availPointsText');
+    if (character.statPoints > 0) {
+      banner.style.display = 'flex';
+      ptText.textContent = character.statPoints;
+    } else {
+      banner.style.display = 'none';
+    }
   }
 
-  return { character, initNew, getMod, takeDamage, heal, loadState, renderAll };
+  return { character, initNew, gainExp, allocatePoint, consumeSta, restoreSta, takeDamage, heal, getMod, loadState, renderAll };
 })();
 
 /**
  * ========================================================
- * 模組 5：DungeonMaster (隨機地下城遭遇模組)
+ * 模組 5：DungeonMaster (魔物池、技能與遭遇管理)
  * ========================================================
  */
 const DungeonMaster = (function() {
-  const monsters = [
-    { name: "地城飢餓大老鼠", ac: 10, hp: 5, atk: 1, dmg: 3, desc: "一隻眼冒紅光的巨型變異老鼠在廢墟碎石中竄出！" },
-    { name: "迷途哥布林侍從", ac: 11, hp: 7, atk: 2, dmg: 4, desc: "一名手持破鈍劍的哥布林尖叫著朝你揮舞！" },
-    { name: "地宮骷髏兵", ac: 12, hp: 9, atk: 2, dmg: 5, desc: "一副白骨骷髏緩緩從棺木爬起，手中握著鏽蝕長矛！" }
+  const monsterArsenal = {
+    "老鼠": [
+      { name: "狂亂撕咬", dmgSides: 4, dmgBonus: 1, rate: 0.6 },
+      { name: "疫病感染", dmgSides: 6, dmgBonus: 2, rate: 0.4 }
+    ],
+    "哥布林": [
+      { name: "淬毒刺擊", dmgSides: 6, dmgBonus: 2, rate: 0.5 },
+      { name: "拋擲碎石", dmgSides: 4, dmgBonus: 1, rate: 0.3 },
+      { name: "狂亂揮砍", dmgSides: 8, dmgBonus: 2, rate: 0.2 }
+    ],
+    "骷髏": [
+      { name: "戰矛穿刺", dmgSides: 6, dmgBonus: 2, rate: 0.5 },
+      { name: "盾牌猛擊", dmgSides: 4, dmgBonus: 3, rate: 0.3 },
+      { name: "骨刃斬首", dmgSides: 10, dmgBonus: 3, rate: 0.2 }
+    ],
+    "default": [
+      { name: "猛烈突襲", dmgSides: 6, dmgBonus: 1, rate: 0.7 },
+      { name: "致命撲擊", dmgSides: 8, dmgBonus: 2, rate: 0.3 }
+    ]
+  };
+
+  const monstersTemplate = [
+    { name: "飢餓地穴鼠", ac: 10, maxHp: 7, hp: 7, atk: 1, exp: 35, desc: "一隻眼冒兇光的變異巨鼠在廢墟碎石中竄出！" },
+    { name: "迷途哥布林斥候", ac: 11, maxHp: 10, hp: 10, atk: 2, exp: 50, desc: "一名手持短刃的哥布林斥候從廊道陰影現身！" },
+    { name: "地宮骷髏精兵", ac: 12, maxHp: 15, hp: 15, atk: 3, exp: 75, desc: "一副白骨骷髏緊握鏽蝕戰矛與盾牌，眼窩燃燒著幽藍磷火！" }
   ];
 
   let currentMonster = null;
-  let currentEncounterText = "你踏入了幽暗的初心者試煉之穴。";
+  let currentEncounterText = "你踏入了幽暗的試煉迷宮。";
+
+  function getSkills(name) {
+    for (const k in monsterArsenal) {
+      if (name.includes(k)) return monsterArsenal[k];
+    }
+    return monsterArsenal["default"];
+  }
 
   function spawnEncounter() {
-    const isCombat = Math.random() > 0.4;
+    const isCombat = Math.random() > 0.35;
     if (isCombat) {
-      currentMonster = { ...monsters[Math.floor(Math.random() * monsters.length)] };
-      currentEncounterText = `【遭遇魔物】${currentMonster.desc} (AC: ${currentMonster.ac}, 生命: ${currentMonster.hp})`;
+      const template = monstersTemplate[Math.floor(Math.random() * monstersTemplate.length)];
+      currentMonster = { ...template, skills: getSkills(template.name) };
+      currentEncounterText = `【遭遇魔物】${currentMonster.desc}`;
+      GameEvents.emit('MONSTER_SPAWNED', currentMonster);
       return { type: "COMBAT", monster: currentMonster, text: currentEncounterText };
     } else {
       currentMonster = null;
+      GameEvents.emit('MONSTER_CLEARED');
       const events = [
-        "你察覺到前方走廊有一處隱密的絆線機關！（需要敏捷 DEX 檢定）",
-        "石牆上留有古代初心者留下的刻痕日誌。（需要智力 INT 檢定破譯）",
-        "你在倒塌的石像背後發現了一處稍作休息的避風處。"
+        { text: "你在破損石磚下發現了一處探險者留下的備忘筆記（獲得 20 EXP）！", exp: 20 },
+        { text: "你冷靜地繞過了一處連動尖刺陷阱，從實戰中獲益匪淺（獲得 25 EXP）！", exp: 25 },
+        { text: "石壁上雕刻著初心者劍技指引，你凝神參悟（獲得 15 EXP）！", exp: 15 }
       ];
-      currentEncounterText = `【探索發現】${events[Math.floor(Math.random() * events.length)]}`;
+      const ev = events[Math.floor(Math.random() * events.length)];
+      currentEncounterText = `【探索收穫】${ev.text}`;
+      CharacterSheet.gainExp(ev.exp);
       return { type: "EVENT", text: currentEncounterText };
     }
   }
 
+  function pickMonsterAttack(monster) {
+    const skills = monster.skills || getSkills(monster.name);
+    const picked = skills[Math.floor(Math.random() * skills.length)];
+    const rollDmg = DndEngine.roll(picked.dmgSides) + picked.dmgBonus;
+    return { skillName: picked.name, dmg: rollDmg };
+  }
+
   function getCurrentMonster() { return currentMonster; }
-  function clearMonster() { currentMonster = null; }
+  function clearMonster() { 
+    currentMonster = null;
+    GameEvents.emit('MONSTER_CLEARED');
+  }
   function setEncounterText(txt) { currentEncounterText = txt; }
   function getEncounterText() { return currentEncounterText; }
 
-  return { spawnEncounter, getCurrentMonster, clearMonster, setEncounterText, getEncounterText };
+  return { spawnEncounter, getCurrentMonster, clearMonster, pickMonsterAttack, setEncounterText, getEncounterText };
 })();
 
 /**
  * ========================================================
- * 模組 6：BattleLog (終端日誌)
+ * 模組 6：MonsterHUD (事件驅動魔物血條面板 - 零卡死安全渲染)
+ * ========================================================
+ */
+const MonsterHUD = (function() {
+  const hudArea = document.getElementById('monsterHudArea');
+  const nameEl = document.getElementById('hudMonsterName');
+  const acEl = document.getElementById('hudMonsterAc');
+  const barEl = document.getElementById('hudMonsterHpBar');
+  const textEl = document.getElementById('hudMonsterHpText');
+  const skillsEl = document.getElementById('hudMonsterSkills');
+
+  function render(monster) {
+    if (!monster || monster.hp <= 0) {
+      hudArea.style.display = 'none';
+      return;
+    }
+    hudArea.style.display = 'block';
+    nameEl.textContent = monster.name;
+    acEl.textContent = `護甲 AC: ${monster.ac}`;
+    
+    const pct = Math.max(0, Math.min(100, (monster.hp / monster.maxHp) * 100));
+    barEl.style.width = `${pct}%`;
+    textEl.textContent = `${monster.hp} / ${monster.maxHp} HP`;
+
+    skillsEl.innerHTML = (monster.skills || []).map(s => `
+      <span class="skill-pill">⚡ ${s.name} (1d${s.dmgSides}+${s.dmgBonus})</span>
+    `).join('');
+  }
+
+  function hide() {
+    hudArea.style.display = 'none';
+  }
+
+  // 訂閱事件
+  GameEvents.on('MONSTER_SPAWNED', render);
+  GameEvents.on('MONSTER_UPDATED', render);
+  GameEvents.on('MONSTER_CLEARED', hide);
+
+  return { render, hide };
+})();
+
+/**
+ * ========================================================
+ * 模組 7：BattleLog (日誌呈現)
  * ========================================================
  */
 const BattleLog = (function() {
@@ -597,7 +994,6 @@ const BattleLog = (function() {
     el.textContent = `[${new Date().toLocaleTimeString().slice(3, 8)}] ${msg}`;
     logBox.appendChild(el);
     logBox.scrollTop = logBox.scrollHeight;
-
     if (save) SaveEngine.save();
   }
 
@@ -606,24 +1002,19 @@ const BattleLog = (function() {
     SaveEngine.save();
   }
 
-  function getLogsHTML() {
-    return logBox.innerHTML;
-  }
-
-  function setLogsHTML(html) {
-    logBox.innerHTML = html;
-  }
+  function getLogsHTML() { return logBox.innerHTML; }
+  function setLogsHTML(html) { logBox.innerHTML = html; }
 
   return { add, clear, getLogsHTML, setLogsHTML };
 })();
 
 /**
  * ========================================================
- * 模組 7：SaveEngine (localStorage 本地存檔引擎)
+ * 模組 8：SaveEngine (localStorage 本地存檔引擎)
  * ========================================================
  */
 const SaveEngine = (function() {
-  const STORAGE_KEY = "DND_ROUGE_SAVE_V1";
+  const STORAGE_KEY = "DND_ROUGE_SAVE_V3_PERFECT";
 
   function save() {
     const data = {
@@ -643,11 +1034,7 @@ const SaveEngine = (function() {
   function load() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    try {
-      return JSON.parse(raw);
-    } catch (e) {
-      return null;
-    }
+    try { return JSON.parse(raw); } catch (e) { return null; }
   }
 
   function clearSave() {
@@ -659,7 +1046,7 @@ const SaveEngine = (function() {
 
 /**
  * ========================================================
- * 主控制器：介面協調與事件監聽
+ * 主控制器：事件協調調度
  * ========================================================
  */
 document.addEventListener('DOMContentLoaded', () => {
@@ -671,14 +1058,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const selectGender = document.getElementById('selectGender');
   const encounterDesc = document.getElementById('encounterDesc');
 
-  let currentFiveRaces = [];
-
-  // 初始化種族下拉選單 (隨機 5 種)
   function initRaceOptions() {
-    currentFiveRaces = RaceModule.getRandomFiveRaces();
-    selectRace.innerHTML = currentFiveRaces.map(r => `
-      <option value="${r.id}">${r.name}</option>
-    `).join('');
+    const races = RaceModule.getRandomFiveRaces();
+    selectRace.innerHTML = races.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
     updateRaceTip();
   }
 
@@ -689,12 +1071,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   selectRace.addEventListener('change', updateRaceTip);
 
-  // 隨機姓名按鈕
   document.getElementById('btnRandomName').addEventListener('click', () => {
     inputName.value = NameGenerator.generate(selectGender.value);
   });
 
-  // 確認創角
+  // 確定創角
   document.getElementById('btnConfirmCreate').addEventListener('click', () => {
     const name = inputName.value.trim() || NameGenerator.generate(selectGender.value);
     const gender = selectGender.value;
@@ -706,12 +1087,12 @@ document.addEventListener('DOMContentLoaded', () => {
     activeProfileArea.style.display = 'flex';
 
     BattleLog.clear();
-    BattleLog.add(`【冒險啟程】${name}（${raceObj.name}，初心者）誕生了！帶著木劍出發！`, "crit");
+    BattleLog.add(`【冒險啟程】${name}（${raceObj.name}，初心者）踏入地城！耐力與 EXP 系統已啟動。`, "crit");
   });
 
-  // 重開新局按鈕
+  // 重開新局
   document.getElementById('btnResetGame').addEventListener('click', () => {
-    if (confirm("確定要拋棄當前進度重開新局嗎？所有地城紀錄將會清空。")) {
+    if (confirm("確定要拋棄當前進度重開新局嗎？所有地城紀錄將清空。")) {
       SaveEngine.clearSave();
       initRaceOptions();
       inputName.value = "";
@@ -726,7 +1107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 探索按鈕
+  // 探索
   document.getElementById('btnExplore').addEventListener('click', () => {
     const encounter = DungeonMaster.spawnEncounter();
     encounterDesc.textContent = encounter.text;
@@ -734,11 +1115,17 @@ document.addEventListener('DOMContentLoaded', () => {
     SaveEngine.save();
   });
 
-  // 攻擊按鈕
+  // 攻擊 (-3 耐力)
   document.getElementById('btnAtk').addEventListener('click', () => {
     const monster = DungeonMaster.getCurrentMonster();
     if (!monster) {
-      BattleLog.add("目前眼前沒有魔物，請點擊「深入地城探索」！");
+      BattleLog.add("目前眼前沒有敵對目標，請先點擊「深入地城探索」！");
+      return;
+    }
+
+    // 耐力檢定
+    if (!CharacterSheet.consumeSta(3)) {
+      BattleLog.add("⚡ 耐力不足！無法流暢揮劍，請使用「短休息」！", "fail");
       return;
     }
 
@@ -747,93 +1134,103 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (check.isCrit) {
       const dmg = DndEngine.roll(6) + DndEngine.roll(6) + strMod;
-      monster.hp -= dmg;
-      BattleLog.add(`💥 命中要害（Natural 20）！新手木劍揮出奇蹟重擊，造成 ${dmg} 點傷害！`, "crit");
+      monster.hp = Math.max(0, monster.hp - dmg);
+      BattleLog.add(`💥 致命一擊（Natural 20）！新手木劍揮出破甲暴擊，造成 ${dmg} 點傷害！(-3耐力)`, "crit");
     } else if (check.isCritFail) {
-      BattleLog.add(`💀 大失敗（Natural 1）！你在揮劍時腳底打滑，摔了個四腳朝天！`, "fail");
+      BattleLog.add(`💀 大失敗（Natural 1）！你在揮劍時腳底打滑，攻擊完全偏斜！(-3耐力)`, "fail");
     } else if (check.isSuccess) {
       const dmg = Math.max(1, DndEngine.roll(6) + strMod);
-      monster.hp -= dmg;
-      BattleLog.add(`⚔️ 命中判定成功！(骰出 ${check.raw}+${check.modifier}=${check.total} vs AC ${check.dc})，造成 ${dmg} 點傷害。`, "success");
+      monster.hp = Math.max(0, monster.hp - dmg);
+      BattleLog.add(`⚔️ 命中！(骰出 ${check.raw}+${check.modifier}=${check.total} vs AC ${check.dc})，造成 ${dmg} 點傷害。(-3耐力)`, "success");
     } else {
-      BattleLog.add(`🛡️ 攻擊被格擋！(骰出 ${check.total} vs AC ${check.dc})。`);
+      BattleLog.add(`🛡️ 攻擊被格擋！(骰出 ${check.total} vs AC ${check.dc})。(-3耐力)`);
     }
+
+    // 更新魔物血條 HUD
+    GameEvents.emit('MONSTER_UPDATED', monster);
 
     // 怪物血量判定
     if (monster.hp <= 0) {
-      BattleLog.add(`🏆 ${monster.name} 被你擊倒！獲得戰鬥勝利！`, "crit");
-      encounterDesc.textContent = "魔物已被擊潰，通道重歸安全。可繼續探索。";
+      BattleLog.add(`🏆 ${monster.name} 被你擊倒！獲得戰鬥勝利！獲得 ${monster.exp} EXP！`, "crit");
+      encounterDesc.textContent = "魔物已被擊潰，通道重歸平靜。你可以繼續探索。";
+      CharacterSheet.gainExp(monster.exp);
       DungeonMaster.clearMonster();
     } else {
-      // 怪物反擊
+      // 怪物動態施放技能反擊
+      const atkInfo = DungeonMaster.pickMonsterAttack(monster);
       const mAtk = DndEngine.roll(20) + monster.atk;
+
       if (mAtk >= CharacterSheet.character.ac) {
-        CharacterSheet.takeDamage(monster.dmg);
-        BattleLog.add(`🩸 ${monster.name} 的反擊命中了你！受到 ${monster.dmg} 點傷害。(剩餘 HP: ${CharacterSheet.character.hp})`, "fail");
+        CharacterSheet.takeDamage(atkInfo.dmg);
+        BattleLog.add(`🩸 ${monster.name} 發動【${atkInfo.skillName}】命中！受到 ${atkInfo.dmg} 點傷害。(剩餘 HP: ${CharacterSheet.character.hp})`, "fail");
         if (CharacterSheet.character.hp <= 0) {
-          BattleLog.add(`☠️ 你耗盡了體力倒在迷宮中... 冒險暫告一段落，請休息或重開新局！`, "fail");
+          BattleLog.add(`☠️ 你耗盡體力倒在迷宮中... 請短休息或點擊右上角重開新局！`, "fail");
         }
       } else {
-        BattleLog.add(`🛡️ 你勉強用木盾擋開了 ${monster.name} 的揮擊！`);
+        BattleLog.add(`🛡️ 你靈巧舉起木盾，成功化解了 ${monster.name} 的【${atkInfo.skillName}】！`);
       }
     }
     SaveEngine.save();
   });
 
-  // 閃避翻滾 (DEX)
+  // 翻滾閃避 (-2 耐力)
   document.getElementById('btnEvade').addEventListener('click', () => {
+    if (!CharacterSheet.consumeSta(2)) {
+      BattleLog.add("⚡ 耐力耗盡！無法進行翻滾動作！", "fail");
+      return;
+    }
     const dexMod = CharacterSheet.getMod('DEX');
     const check = DndEngine.d20Check(dexMod, 12);
     if (check.isSuccess) {
-      BattleLog.add(`🤸 敏捷檢定成功 (${check.total} vs DC 12)！靈活翻滾規避了危險。`, "success");
+      BattleLog.add(`🤸 敏捷翻滾成功 (${check.total} vs DC 12)！靈巧拉開了身位。(-2耐力)`, "success");
     } else {
-      BattleLog.add(`💢 敏捷檢定失敗 (${check.total} vs DC 12)！身體有些笨拙。`, "fail");
+      BattleLog.add(`💢 翻滾失敗 (${check.total} vs DC 12)！重心微失撞在石牆上。(-2耐力)`, "fail");
     }
   });
 
-  // 調查機關 (INT)
+  // 調查
   document.getElementById('btnSearch').addEventListener('click', () => {
     const intMod = CharacterSheet.getMod('INT');
     const check = DndEngine.d20Check(intMod, 12);
     if (check.isSuccess) {
-      BattleLog.add(`💡 調查成功 (${check.total} vs DC 12)！你細心摸索出磚塊背後的小暗格。`, "success");
+      BattleLog.add(`💡 調查成功 (${check.total} vs DC 12)！摸索出暗格獲得 15 EXP！`, "success");
+      CharacterSheet.gainExp(15);
     } else {
-      BattleLog.add(`❓ 調查失敗 (${check.total} vs DC 12)！摸了一手塵土。`);
+      BattleLog.add(`❓ 調查失敗 (${check.total} vs DC 12)！未發現任何異狀。`);
     }
   });
 
-  // 短休息
+  // 短休息 (耐力全滿 + 回血)
   document.getElementById('btnRest').addEventListener('click', () => {
+    CharacterSheet.restoreSta();
     const healed = CharacterSheet.heal(DndEngine.roll(6) + CharacterSheet.getMod('CON'));
-    BattleLog.add(`🏕️ 你原地坐下啃乾糧休息，恢復了體力。(目前 HP: ${healed})`, "success");
+    BattleLog.add(`🏕️ 你搭起營火休息，耐力值完全恢復！生命值回升至 ${healed} HP。`, "success");
   });
 
-  // 清空日誌
   document.getElementById('btnClearLog').addEventListener('click', () => {
     BattleLog.clear();
   });
 
-  // ========================================================
-  // 啟動自我檢查：讀取進度或初始化創角
-  // ========================================================
+  // 本地進度恢復
   const savedState = SaveEngine.load();
   if (savedState && savedState.hasActiveChar && savedState.character) {
-    // 恢復先前存檔
     CharacterSheet.loadState(savedState.character);
     encounterDesc.textContent = savedState.encounterText || "地城走廊一片寂靜。";
     DungeonMaster.setEncounterText(savedState.encounterText);
-    if (savedState.monster) {
-      // 恢復怪物戰鬥狀態
-      DungeonMaster.spawnEncounter(); // 佔位
+
+    if (savedState.monster && savedState.monster.hp > 0) {
+      GameEvents.emit('MONSTER_SPAWNED', savedState.monster);
+    } else {
+      GameEvents.emit('MONSTER_CLEARED');
     }
+
     if (savedState.logs) {
       BattleLog.setLogsHTML(savedState.logs);
     }
     creationPanel.style.display = 'none';
     activeProfileArea.style.display = 'flex';
-    BattleLog.add("🔄 冒險進度已自動自本地存檔無縫復原！", "encounter", false);
+    BattleLog.add("🔄 冒險進度（等級、耐力、自由配點與地城現場）已自動無縫復原！", "encounter", false);
   } else {
-    // 首次進入：初始化 5 種族隨機推薦選單
     initRaceOptions();
     inputName.value = NameGenerator.generate("男");
     creationPanel.style.display = 'flex';
@@ -841,597 +1238,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 </script>
-<!-- ======================================================== -->
-<!-- 獨立追加模組：EXP 升級成長 ＋ 耐力值系統 ＋ 10點自由配點外掛 -->
-<!-- 特性：不改動原有 HTML，自動掛載 UI 與非侵入式邏輯擴充 -->
-<!-- ======================================================== -->
-<style id="dnd-addon-style">
-  .addon-bar-line {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin-top: 6px;
-  }
-  .addon-bar-info {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.72rem;
-    font-weight: 600;
-  }
-  .addon-bar-bg {
-    background: #252a3a;
-    border-radius: 6px;
-    height: 10px;
-    width: 100%;
-    overflow: hidden;
-  }
-  .addon-fill-sta {
-    background: linear-gradient(90deg, #059669, #10b981);
-    height: 100%;
-    width: 100%;
-    transition: width 0.3s ease;
-  }
-  .addon-fill-exp {
-    background: linear-gradient(90deg, #d97706, #f59e0b);
-    height: 100%;
-    width: 0%;
-    transition: width 0.3s ease;
-  }
-  /* 升級配點按鈕與橫幅 */
-  .addon-stat-plus {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    background: #f59e0b;
-    color: #000;
-    border: none;
-    border-radius: 4px;
-    width: 20px;
-    height: 20px;
-    font-weight: 900;
-    font-size: 0.85rem;
-    cursor: pointer;
-    line-height: 1;
-    display: none;
-  }
-  .addon-stat-plus:hover { filter: brightness(1.2); }
-  .addon-alloc-banner {
-    background: #3b2a0c;
-    border: 1px solid #f59e0b;
-    border-radius: 8px;
-    padding: 8px 12px;
-    display: none;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.85rem;
-    color: #fef08a;
-    margin-bottom: 8px;
-  }
-  .stat-box { position: relative; } /* 確保 [+] 按鈕定位 */
-</style>
 
-<script id="dnd-addon-script">
-(function() {
-  const STORAGE_KEY = "DND_ADDON_EXP_STA_V1";
-
-  // 20 種族升級生命骰標準 (d12: 巨體, d10: 勇戰, d8: 均衡, d6: 靈巧)
-  const raceHpDieMap = {
-    "山脈矮人": 12, "半獸人": 12, "巨靈裔": 12, "蜥蜴人": 12,
-    "人類": 10, "丘陵矮人": 10, "龍裔": 10, "弗伯格": 10, "特里同": 10, "海靈": 10,
-    "高等精靈": 8, "木精靈": 8, "提夫林": 8, "半精靈": 8, "阿斯莫": 8, "天界裔": 8, "虎人": 8, "貓人": 8, "元素裔": 8,
-    "輕足半身人": 6, "半身人": 6, "岩侏儒": 6, "肯庫": 6, "鴉人": 6, "狗頭人": 6
-  };
-
-  // 外掛獨立狀態
-  let addonState = {
-    level: 1,
-    exp: 0,
-    maxExp: 100,
-    sta: 20,
-    maxSta: 20,
-    statPoints: 0
-  };
-
-  // 1. 本地讀檔
-  function loadAddonState() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try { addonState = Object.assign(addonState, JSON.parse(raw)); } catch(e) {}
-    }
-  }
-
-  function saveAddonState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(addonState));
-  }
-
-  // 2. 自動在現有 DOM 注入耐力與經驗值狀態條
-  function injectUI() {
-    // 尋找血條容器
-    const hpContainer = document.querySelector('.hp-bar-container') || document.getElementById('hpBar')?.parentElement;
-    if (!hpContainer || document.getElementById('addonStaBar')) return;
-
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = `
-      <!-- 耐力條 (STA) -->
-      <div class="addon-bar-line">
-        <div class="addon-bar-info">
-          <span style="color: #6ee7b7;">⚡ 耐力值 (STA)</span>
-          <span id="addonStaText">${addonState.sta} / ${addonState.maxSta}</span>
-        </div>
-        <div class="addon-bar-bg">
-          <div class="addon-fill-sta" id="addonStaBar"></div>
-        </div>
-      </div>
-
-      <!-- 經驗值條 (EXP) -->
-      <div class="addon-bar-line">
-        <div class="addon-bar-info">
-          <span style="color: #fde047;">✨ 經驗值 (EXP)</span>
-          <span id="addonExpText">${addonState.exp} / ${addonState.maxExp}</span>
-        </div>
-        <div class="addon-bar-bg">
-          <div class="addon-fill-exp" id="addonExpBar"></div>
-        </div>
-      </div>
-    `;
-    hpContainer.parentNode.insertBefore(wrapper, hpContainer.nextSibling);
-
-    // 注入配點橫幅
-    const statsGrid = document.getElementById('statsGrid');
-    if (statsGrid && !document.getElementById('addonAllocBanner')) {
-      const banner = document.createElement('div');
-      banner.id = 'addonAllocBanner';
-      banner.className = 'addon-alloc-banner';
-      banner.innerHTML = `
-        <span>🎉 升級獎勵！可用能力點數：<strong id="addonPointsText" style="color:#fff; font-size:1rem;">0</strong> 點</span>
-        <span style="font-size: 0.75rem; opacity: 0.85;">點擊各屬性右上角 [+] 分配</span>
-      `;
-      statsGrid.parentNode.insertBefore(banner, statsGrid);
-    }
-
-    renderBars();
-    injectStatButtons();
-  }
-
-  // 3. 在六大屬性格子掛上 [+] 分配按鈕
-  function injectStatButtons() {
-    const statBoxes = document.querySelectorAll('.stat-box');
-    const hasPoints = addonState.statPoints > 0;
-
-    const banner = document.getElementById('addonAllocBanner');
-    if (banner) {
-      banner.style.display = hasPoints ? 'flex' : 'none';
-      const ptText = document.getElementById('addonPointsText');
-      if (ptText) ptText.textContent = addonState.statPoints;
-    }
-
-    statBoxes.forEach(box => {
-      let btn = box.querySelector('.addon-stat-plus');
-      const nameEl = box.querySelector('.stat-name');
-      if (!nameEl) return;
-      const statKey = nameEl.textContent.trim();
-
-      if (!btn) {
-        btn = document.createElement('button');
-        btn.className = 'addon-stat-plus';
-        btn.textContent = '+';
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          allocateStat(statKey);
-        };
-        box.appendChild(btn);
-      }
-      btn.style.display = hasPoints ? 'block' : 'none';
-    });
-  }
-
-  // 4. 自由點數分配邏輯
-  function allocateStat(statKey) {
-    if (addonState.statPoints <= 0) return;
-    if (typeof CharacterSheet !== 'undefined' && CharacterSheet.state && CharacterSheet.state.stats) {
-      CharacterSheet.state.stats[statKey] = (CharacterSheet.state.stats[statKey] || 10) + 1;
-      addonState.statPoints -= 1;
-
-      // CON 增加連帶提升 HP
-      if (statKey === "CON") {
-        CharacterSheet.state.maxHp = (CharacterSheet.state.maxHp || 10) + 1;
-        CharacterSheet.state.hp = (CharacterSheet.state.hp || 10) + 1;
-      }
-      // DEX 增加連帶提升 AC
-      if (statKey === "DEX") {
-        const dexMod = Math.floor((CharacterSheet.state.stats.DEX - 10) / 2);
-        CharacterSheet.state.ac = 10 + dexMod;
-      }
-
-      if (typeof CharacterSheet.renderStats === 'function') CharacterSheet.renderStats();
-      if (typeof CharacterSheet.renderHP === 'function') CharacterSheet.renderHP();
-    }
-
-    saveAddonState();
-    injectStatButtons();
-  }
-
-  // 5. 經驗獲取與自動升級運算
-  function addExp(amount) {
-    addonState.exp += amount;
-
-    while (addonState.exp >= addonState.maxExp) {
-      addonState.exp -= addonState.maxExp;
-      addonState.level += 1;
-      addonState.maxExp = Math.floor(addonState.maxExp * 1.5);
-
-      // (A) 耐力值每升 1 級提升 5 點
-      addonState.maxSta += 5;
-      addonState.sta = addonState.maxSta;
-
-      // (B) 每次升級固定獲得 10 點自由分配點數
-      addonState.statPoints += 10;
-
-      // (C) 依據種族生命骰自動提升生命上限
-      let raceKey = "人類";
-      if (typeof CharacterSheet !== 'undefined' && CharacterSheet.state) {
-        const fullRace = CharacterSheet.state.raceName || document.getElementById('charRaceGenderTag')?.textContent || "";
-        for (const k in raceHpDieMap) {
-          if (fullRace.includes(k)) { raceKey = k; break; }
-        }
-
-        const dieSides = raceHpDieMap[raceKey] || 8;
-        const conScore = CharacterSheet.state.stats?.CON || 10;
-        const conMod = Math.floor((conScore - 10) / 2);
-        const hpRoll = Math.floor(Math.random() * dieSides) + 1;
-        const hpGain = Math.max(3, hpRoll + conMod);
-
-        CharacterSheet.state.maxHp = (CharacterSheet.state.maxHp || 10) + hpGain;
-        CharacterSheet.state.hp = CharacterSheet.state.maxHp;
-
-        if (typeof CharacterSheet.renderHP === 'function') CharacterSheet.renderHP();
-        if (typeof BattleLog !== 'undefined') {
-          BattleLog.add(`🌟【升級達成！】升至等級 Lv.${addonState.level}！`, "crit");
-          BattleLog.add(`⚡ 耐力上限 +5 (當前: ${addonState.maxSta})，【${raceKey}】體質生命骰 d${dieSides} 使 HP 提升 +${hpGain} (當前: ${CharacterSheet.state.maxHp})！`, "crit");
-          BattleLog.add(`🎁 獲得 10 點自由分配點數，已開啟屬性面板 [+] 按鈕！`, "crit");
-        }
-      }
-    }
-
-    renderBars();
-    injectStatButtons();
-    saveAddonState();
-  }
-
-  // 6. 耐力消耗與恢復
-  function useStamina(val) {
-    if (addonState.sta < val) return false;
-    addonState.sta -= val;
-    renderBars();
-    saveAddonState();
-    return true;
-  }
-
-  function restoreStamina() {
-    addonState.sta = addonState.maxSta;
-    renderBars();
-    saveAddonState();
-  }
-
-  function renderBars() {
-    const staBar = document.getElementById('addonStaBar');
-    const staText = document.getElementById('addonStaText');
-    if (staBar && staText) {
-      const pct = Math.max(0, (addonState.sta / addonState.maxSta) * 100);
-      staBar.style.width = `${pct}%`;
-      staText.textContent = `${addonState.sta} / ${addonState.maxSta}`;
-    }
-
-    const expBar = document.getElementById('addonExpBar');
-    const expText = document.getElementById('addonExpText');
-    if (expBar && expText) {
-      const pct = Math.max(0, (addonState.exp / addonState.maxExp) * 100);
-      expBar.style.width = `${pct}%`;
-      expText.textContent = `${addonState.exp} / ${addonState.maxExp}`;
-    }
-  }
-
-  // 7. 攔截主程式動作按鈕，掛上耐力與經驗獲取邏輯
-  function hookActions() {
-    const btnAtk = document.getElementById('btnAtk');
-    const btnEvade = document.getElementById('btnEvade');
-    const btnRest = document.getElementById('btnRest');
-    const btnReset = document.getElementById('btnResetGame');
-
-    // 攔截攻擊 (消耗 3 耐力，擊倒給 EXP)
-    if (btnAtk && !btnAtk.dataset.addonHooked) {
-      btnAtk.dataset.addonHooked = "true";
-      btnAtk.addEventListener('click', function(e) {
-        if (!useStamina(3)) {
-          e.stopImmediatePropagation(); // 耐力不夠，強制阻斷攻擊
-          if (typeof BattleLog !== 'undefined') BattleLog.add("⚡ 耐力不足！無法揮動武器，請使用「短休息」！", "fail");
-          return;
-        }
-        // 延遲偵測是否有怪物被擊倒
-        setTimeout(() => {
-          if (typeof DungeonMaster !== 'undefined' && !DungeonMaster.getCurrentMonster()) {
-            addExp(45); // 擊殺獲得 45 EXP
-          }
-        }, 100);
-      }, true); // Capture 階段攔截
-    }
-
-    // 攔截翻滾 (消耗 2 耐力)
-    if (btnEvade && !btnEvade.dataset.addonHooked) {
-      btnEvade.dataset.addonHooked = "true";
-      btnEvade.addEventListener('click', function(e) {
-        if (!useStamina(2)) {
-          e.stopImmediatePropagation();
-          if (typeof BattleLog !== 'undefined') BattleLog.add("⚡ 耐力不足！雙腿發軟無法流暢翻滾！", "fail");
-        }
-      }, true);
-    }
-
-    // 攔截短休息 (耐力全回滿)
-    if (btnRest && !btnRest.dataset.addonHooked) {
-      btnRest.dataset.addonHooked = "true";
-      btnRest.addEventListener('click', function() {
-        restoreStamina();
-        if (typeof BattleLog !== 'undefined') BattleLog.add("⚡ 營火歇息使耐力值完全恢復！", "success");
-      });
-    }
-
-    // 重開新局時同步清空外掛存檔
-    if (btnReset && !btnReset.dataset.addonHooked) {
-      btnReset.dataset.addonHooked = "true";
-      btnReset.addEventListener('click', function() {
-        localStorage.removeItem(STORAGE_KEY);
-        addonState = { level: 1, exp: 0, maxExp: 100, sta: 20, maxSta: 20, statPoints: 0 };
-        renderBars();
-        injectStatButtons();
-      });
-    }
-  }
-
-  // 啟動入口
-  function initAddon() {
-    loadAddonState();
-    injectUI();
-    hookActions();
-
-    // 監聽 DOM 變化，防止主程式重繪時沖刷掉外掛按鈕
-    const observer = new MutationObserver(() => {
-      injectUI();
-      hookActions();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    console.log(" D&D EXP/STA 成長外掛模組已自動掛載！");
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAddon);
-  } else {
-    initAddon();
-  }
-})();
-</script>
-<!-- ======================================================== -->
-<!-- 獨立追加模組：魔物血條 HUD ＋ 技能傷害系統 (安全防凍結版) -->
-<!-- 特性：移除 DOM Observer，事件驅動更新，絕不卡死瀏覽器 -->
-<!-- ======================================================== -->
-<style id="dnd-monster-hud-style">
-  .monster-hud-card {
-    background: linear-gradient(180deg, #231215 0%, #170d10 100%);
-    border: 1px solid #7f1d1d;
-    border-radius: 8px;
-    padding: 10px 12px;
-    margin-bottom: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .monster-hud-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .monster-name-tag {
-    font-weight: 800;
-    color: #f87171;
-    font-size: 0.95rem;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .monster-ac-badge {
-    background: #371518;
-    color: #fca5a5;
-    border: 1px solid #991b1b;
-    border-radius: 4px;
-    padding: 2px 6px;
-    font-size: 0.72rem;
-    font-weight: 700;
-  }
-  .monster-hp-container {
-    background: #2a1115;
-    border-radius: 6px;
-    height: 12px;
-    width: 100%;
-    overflow: hidden;
-    border: 1px solid #4c1d24;
-  }
-  .monster-hp-bar {
-    background: linear-gradient(90deg, #dc2626, #ef4444);
-    height: 100%;
-    width: 100%;
-    transition: width 0.25s ease;
-  }
-  .monster-hp-text {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: #fca5a5;
-  }
-  .monster-skills-box {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 2px;
-  }
-  .skill-pill {
-    background: #35181c;
-    border: 1px solid #5c242a;
-    border-radius: 4px;
-    padding: 2px 6px;
-    font-size: 0.7rem;
-    color: #fed7aa;
-  }
-</style>
-
-<script id="dnd-monster-hud-script">
-(function() {
-  const monsterArsenal = {
-    "老鼠": [
-      { name: "狂亂撕咬", dmgSides: 4, dmgBonus: 1, rate: 0.6 },
-      { name: "疫病感染", dmgSides: 6, dmgBonus: 2, rate: 0.4 }
-    ],
-    "哥布林": [
-      { name: "淬毒刺擊", dmgSides: 6, dmgBonus: 2, rate: 0.5 },
-      { name: "拋擲碎石", dmgSides: 4, dmgBonus: 1, rate: 0.3 },
-      { name: "狂亂揮砍", dmgSides: 8, dmgBonus: 2, rate: 0.2 }
-    ],
-    "骷髏": [
-      { name: "戰矛穿刺", dmgSides: 6, dmgBonus: 2, rate: 0.5 },
-      { name: "盾牌猛擊", dmgSides: 4, dmgBonus: 3, rate: 0.3 },
-      { name: "裂骨重劈", dmgSides: 10, dmgBonus: 3, rate: 0.2 }
-    ],
-    "食屍鬼": [
-      { name: "腐爛利爪", dmgSides: 8, dmgBonus: 2, rate: 0.6 },
-      { name: "噬血撕咬", dmgSides: 10, dmgBonus: 3, rate: 0.4 }
-    ],
-    "半獸人": [
-      { name: "破甲巨斧", dmgSides: 12, dmgBonus: 3, rate: 0.5 },
-      { name: "野蠻衝撞", dmgSides: 8, dmgBonus: 4, rate: 0.5 }
-    ],
-    "default": [
-      { name: "猛烈突襲", dmgSides: 6, dmgBonus: 1, rate: 0.7 },
-      { name: "致命撲擊", dmgSides: 8, dmgBonus: 2, rate: 0.3 }
-    ]
-  };
-
-  let maxHpRecord = 0;
-  let lastRenderedMonster = null;
-  let lastRenderedHp = -1;
-
-  function getSkills(name) {
-    for (const k in monsterArsenal) {
-      if (name.includes(k)) return monsterArsenal[k];
-    }
-    return monsterArsenal["default"];
-  }
-
-  function renderMonsterHUD() {
-    const encounterBox = document.getElementById('encounterDesc');
-    if (!encounterBox) return;
-
-    let curMonster = null;
-    if (typeof DungeonMaster !== 'undefined' && typeof DungeonMaster.getCurrentMonster === 'function') {
-      curMonster = DungeonMaster.getCurrentMonster();
-    }
-
-    let hud = document.getElementById('monsterCombatHud');
-
-    // 無魔物或怪物死亡 -> 移除 HUD
-    if (!curMonster || curMonster.hp <= 0) {
-      if (hud) hud.remove();
-      maxHpRecord = 0;
-      lastRenderedMonster = null;
-      lastRenderedHp = -1;
-      return;
-    }
-
-    // 換了新怪物 -> 重置最大血量
-    if (lastRenderedMonster !== curMonster) {
-      lastRenderedMonster = curMonster;
-      maxHpRecord = curMonster.hp;
-    }
-
-    // 數值無變化則略過，避免無謂重繪
-    if (lastRenderedHp === curMonster.hp && hud) return;
-    lastRenderedHp = curMonster.hp;
-
-    const skills = getSkills(curMonster.name);
-    const hpPct = Math.max(0, Math.min(100, (curMonster.hp / maxHpRecord) * 100));
-
-    if (!hud) {
-      hud = document.createElement('div');
-      hud.id = 'monsterCombatHud';
-      hud.className = 'monster-hud-card';
-      encounterBox.parentNode.insertBefore(hud, encounterBox);
-    }
-
-    hud.innerHTML = `
-      <div class="monster-hud-header">
-        <div class="monster-name-tag">
-          <span>💀</span>
-          <span>${curMonster.name}</span>
-        </div>
-        <div class="monster-ac-badge">護甲 AC: ${curMonster.ac}</div>
-      </div>
-      <div class="monster-hp-container">
-        <div class="monster-hp-bar" style="width: ${hpPct}%;"></div>
-      </div>
-      <div class="monster-hp-text">
-        <span>魔物剩餘血量</span>
-        <span>${curMonster.hp} / ${maxHpRecord} HP</span>
-      </div>
-      <div class="monster-skills-box">
-        ${skills.map(s => `<span class="skill-pill">⚡ ${s.name} (1d${s.dmgSides}+${s.dmgBonus})</span>`).join('')}
-      </div>
-    `;
-  }
-
-  // 綁定特定按鈕事件更新 HUD，絕不使用全域 MutationObserver
-  function setupEvents() {
-    const btnExplore = document.getElementById('btnExplore');
-    const btnAtk = document.getElementById('btnAtk');
-    const btnReset = document.getElementById('btnResetGame');
-
-    if (btnExplore) {
-      btnExplore.addEventListener('click', () => {
-        setTimeout(renderMonsterHUD, 30);
-      });
-    }
-
-    if (btnAtk) {
-      btnAtk.addEventListener('click', () => {
-        // 在反擊前隨機抽招，給怪物換上技能傷害
-        const curMonster = typeof DungeonMaster !== 'undefined' ? DungeonMaster.getCurrentMonster() : null;
-        if (curMonster && curMonster.hp > 0) {
-          const skills = getSkills(curMonster.name);
-          const picked = skills[Math.floor(Math.random() * skills.length)];
-          curMonster.dmg = Math.floor(Math.random() * picked.dmgSides) + 1 + picked.dmgBonus;
-        }
-        setTimeout(renderMonsterHUD, 30);
-      });
-    }
-
-    if (btnReset) {
-      btnReset.addEventListener('click', () => {
-        const hud = document.getElementById('monsterCombatHud');
-        if (hud) hud.remove();
-        maxHpRecord = 0;
-        lastRenderedMonster = null;
-      });
-    }
-
-    // 初次載入刷新一次
-    renderMonsterHUD();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupEvents);
-  } else {
-    setupEvents();
-  }
-})();
-</script>
 </body>
 </html>
