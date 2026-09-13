@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小六壬進階六宮自動排盤系統</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts for Calligraphic & Clean Traditional Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"Noto Serif TC"', 'serif']
+          },
+          colors: {
+            parchment: {
+              50: '#FAF8F5',
+              100: '#F4EFE6',
+              200: '#E8DEC8',
+              300: '#D5C4A1',
+              700: '#5C4033',
+              800: '#3D2817',
+              900: '#231709'
+            },
+            cinnabar: '#9E2A2B',
+            ochre: '#C08552',
+            ink: '#1F1E1C'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar and paper texture subtleties */
+    body {
+      background-color: #231d19;
+      background-image: radial-gradient(#3a2e26 1px, transparent 1px), radial-gradient(#3a2e26 1px, #1a1614 1px);
+      background-size: 40px 40px;
+      background-position: 0 0, 20px 20px;
+    }
+    .paper-texture {
+      background: #fdfbf7;
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(192, 133, 82, 0.2);
+    }
+    .grid-cell {
+      transition: all 0.2s ease-in-out;
+    }
+    .grid-cell:hover {
+      box-shadow: inset 0 0 12px rgba(158, 42, 43, 0.08);
+    }
+  </style>
+</head>
+<body class="font-serif text-ink antialiased min-h-screen p-3 md:p-6 flex flex-col justify-between">
+
+  <header class="max-w-5xl mx-auto w-full text-center mb-6 pt-2">
+    <div class="inline-flex items-center justify-center gap-2 mb-1">
+      <span class="h-px w-8 bg-amber-700/60 inline-block"></span>
+      <span class="text-xs uppercase tracking-widest text-amber-500/80 font-bold">玄門秘訣 · 六宮演禽</span>
+      <span class="h-px w-8 bg-amber-700/60 inline-block"></span>
+    </div>
+    <h1 class="text-2xl md:text-4xl font-black text-parchment-100 tracking-wider drop-shadow">
+      小六壬進階排盤與解課系統
+    </h1>
+    <p class="text-xs md:text-sm text-parchment-300 mt-1 max-w-xl mx-auto">
+      江春義體系演繹：月日時起課、陰陽隔位跳辰、地支配六親、神煞天星客宮照會
+    </p>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-5xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+    <section class="lg:col-span-5 bg-parchment-100 rounded-2xl p-5 shadow-xl border border-parchment-300">
+      <div class="flex items-center justify-between pb-3 border-b border-parchment-300/80 mb-4">
+        <h2 class="text-lg font-bold text-cinnabar flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path>
+          </svg>
+          起課參數與問事
+        </h2>
+        <span class="text-xs bg-parchment-200 text-parchment-800 px-2 py-0.5 rounded-full border border-parchment-300">靈動求課</span>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="grid grid-cols-2 gap-2 mb-4">
+        <button type="button" id="btnNow" class="px-3 py-2 text-xs font-semibold rounded-lg bg-parchment-200 hover:bg-parchment-300 text-parchment-900 border border-parchment-300 transition flex items-center justify-center gap-1">
+          <svg class="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          當前時間起卦
+        </button>
+        <button type="button" id="btnRandom" class="px-3 py-2 text-xs font-semibold rounded-lg bg-amber-800/10 hover:bg-amber-800/20 text-cinnabar border border-cinnabar/30 transition flex items-center justify-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+          隨機數搖卦
+        </button>
+      </div>
+
+      <!-- Inputs: Month, Day, Hour -->
+      <form id="formQiGua" class="space-y-3.5">
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-parchment-800 mb-1">農曆月 (數)</label>
+            <input type="number" id="inputMonth" min="1" max="12" value="4" required class="w-full text-center px-2 py-2 rounded-lg border border-parchment-300 bg-white font-mono font-bold text-gray-800 focus:ring-2 focus:ring-cinnabar focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-parchment-800 mb-1">農曆日 (數)</label>
+            <input type="number" id="inputDay" min="1" max="30" value="5" required class="w-full text-center px-2 py-2 rounded-lg border border-parchment-300 bg-white font-mono font-bold text-gray-800 focus:ring-2 focus:ring-cinnabar focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-parchment-800 mb-1">時辰</label>
+            <select id="selectHour" class="w-full text-center px-1.5 py-2 rounded-lg border border-parchment-300 bg-white font-bold text-gray-800 focus:ring-2 focus:ring-cinnabar focus:outline-none">
+              <option value="1">1 子時 (23-01)</option>
+              <option value="2">2 丑時 (01-03)</option>
+              <option value="3">3 寅時 (03-05)</option>
+              <option value="4">4 卯時 (05-07)</option>
+              <option value="5">5 辰時 (07-09)</option>
+              <option value="6">6 巳時 (09-11)</option>
+              <option value="7">7 午時 (11-13)</option>
+              <option value="8" selected>8 未時 (13-15)</option>
+              <option value="9">9 申時 (15-17)</option>
+              <option value="10">10 酉時 (17-19)</option>
+              <option value="11">11 戌時 (19-21)</option>
+              <option value="12">12 亥時 (21-23)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Divination Purpose Selection -->
+        <div>
+          <label class="block text-xs font-bold text-parchment-800 mb-1">所問事由（定用神）</label>
+          <select id="selectCategory" class="w-full px-3 py-2 rounded-lg border border-parchment-300 bg-white font-medium text-gray-900 focus:ring-2 focus:ring-cinnabar focus:outline-none">
+            <option value="career" selected>事業升遷／應徵公職 (以官鬼為用神)</option>
+            <option value="wealth">求財經商／投資買賣 (以妻財為用神)</option>
+            <option value="health">疾病健康／尋醫問藥 (以自身/子孫為用神)</option>
+            <option value="love_female">姻緣感情 - 女問夫/男友 (以官鬼為用神)</option>
+            <option value="love_male">姻緣感情 - 男問妻/女友 (以妻財為用神)</option>
+            <option value="study">文憑升學／考試名銜 (以父母為用神)</option>
+            <option value="travel">出差遠行／行人走失 (以自身及六宮生剋)</option>
+            <option value="lost">失物查找／被盜破耗 (以妻財及六親生剋)</option>
+          </select>
+        </div>
+
+        <button type="submit" class="w-full mt-2 py-2.5 rounded-xl bg-cinnabar hover:bg-red-800 text-white font-bold tracking-wider shadow-md transition duration-150 flex items-center justify-center gap-2">
+          <span>推演排盤 · 解課</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+        </button>
+      </form>
+
+      <!-- Step Calculation Hint -->
+      <div id="calcPath" class="mt-4 p-3 bg-white/70 rounded-xl text-xs text-parchment-800 border border-parchment-200 leading-relaxed font-mono">
+        <!-- Filled dynamically -->
+      </div>
+    </section>
+
+    <section class="lg:col-span-7 flex flex-col gap-4">
+      <div class="paper-texture rounded-2xl p-4 md:p-6 border-2 border-amber-900/40 relative overflow-hidden">
+        <!-- Classical Title bar -->
+        <div class="flex items-center justify-between border-b-2 border-stone-800 pb-2 mb-4">
+          <div class="flex items-baseline gap-2">
+            <span class="text-xl font-black text-stone-900 tracking-wider">小六壬掌盤</span>
+            <span id="chartSubTitle" class="text-xs font-semibold text-stone-600">農曆四月初五未時 (例課)</span>
+          </div>
+          <div class="text-xs bg-stone-900 text-amber-100 px-2.5 py-1 rounded font-mono font-semibold" id="genderLabel">
+            陰支盤 (隔位順跳)
+          </div>
+        </div>
+
+        <!-- 2x3 Grid (Traditional Palm Mapping) -->
+        <!-- Row 1: 留戀(0,0)  速喜(0,1)  赤口(0,2) -->
+        <!-- Row 2: 大安(1,0)  空亡(1,1)  小吉(1,2) -->
+        <div class="grid grid-cols-3 gap-2 md:gap-3 bg-stone-200 p-2 md:p-3 rounded-xl border border-stone-400">
+          
+          <!-- Cell 1: 留戀 (Top-Left) -->
+          <div id="cell-liulian" class="grid-cell bg-white rounded-lg p-2 md:p-3 text-center border-2 border-stone-300 flex flex-col justify-between h-32 md:h-36 relative">
+            <div class="flex justify-between items-center text-xs font-bold text-stone-600 px-1">
+              <span class="shensha">玄武</span>
+              <span class="star text-amber-800">金星</span>
+            </div>
+            <div class="my-auto py-1">
+              <div class="text-2xl md:text-3xl font-black text-stone-900 tracking-widest dizhi">亥</div>
+              <div class="text-xs font-bold text-amber-900 mt-0.5 liuqin">妻財</div>
+            </div>
+            <div class="flex items-center justify-between text-xs pt-1 border-t border-stone-200">
+              <span class="font-bold text-stone-800 palacename">留戀</span>
+              <span class="tag-marker text-[10px] px-1 rounded"></span>
+            </div>
+          </div>
+
+          <!-- Cell 2: 速喜 (Top-Center) -->
+          <div id="cell-suxi" class="grid-cell bg-white rounded-lg p-2 md:p-3 text-center border-2 border-stone-300 flex flex-col justify-between h-32 md:h-36 relative">
+            <div class="flex justify-between items-center text-xs font-bold text-stone-600 px-1">
+              <span class="shensha">勾陳</span>
+              <span class="star text-amber-800">水星</span>
+            </div>
+            <div class="my-auto py-1">
+              <div class="text-2xl md:text-3xl font-black text-stone-900 tracking-widest dizhi">丑</div>
+              <div class="text-xs font-bold text-amber-900 mt-0.5 liuqin">兄弟</div>
+            </div>
+            <div class="flex items-center justify-between text-xs pt-1 border-t border-stone-200">
+              <span class="font-bold text-stone-800 palacename">速喜</span>
+              <span class="tag-marker text-[10px] px-1 rounded"></span>
+            </div>
+          </div>
+
+          <!-- Cell 3: 赤口 (Top-Right) -->
+          <div id="cell-chikou" class="grid-cell bg-white rounded-lg p-2 md:p-3 text-center border-2 border-stone-300 flex flex-col justify-between h-32 md:h-36 relative">
+            <div class="flex justify-between items-center text-xs font-bold text-stone-600 px-1">
+              <span class="shensha">青龍</span>
+              <span class="star text-amber-800">天空</span>
+            </div>
+            <div class="my-auto py-1">
+              <div class="text-2xl md:text-3xl font-black text-stone-900 tracking-widest dizhi">卯</div>
+              <div class="text-xs font-bold text-amber-900 mt-0.5 liuqin">官鬼</div>
+            </div>
+            <div class="flex items-center justify-between text-xs pt-1 border-t border-stone-200">
+              <span class="font-bold text-stone-800 palacename">赤口</span>
+              <span class="tag-marker text-[10px] px-1 rounded"></span>
+            </div>
+          </div>
+
+          <!-- Cell 4: 大安 (Bottom-Left) -->
+          <div id="cell-daan" class="grid-cell bg-white rounded-lg p-2 md:p-3 text-center border-2 border-stone-300 flex flex-col justify-between h-32 md:h-36 relative">
+            <div class="flex justify-between items-center text-xs font-bold text-stone-600 px-1">
+              <span class="shensha">白虎</span>
+              <span class="star text-amber-800">土星</span>
+            </div>
+            <div class="my-auto py-1">
+              <div class="text-2xl md:text-3xl font-black text-stone-900 tracking-widest dizhi">酉</div>
+              <div class="text-xs font-bold text-amber-900 mt-0.5 liuqin">子孫</div>
+            </div>
+            <div class="flex items-center justify-between text-xs pt-1 border-t border-stone-200">
+              <span class="font-bold text-stone-800 palacename">大安</span>
+              <span class="tag-marker text-[10px] px-1 rounded"></span>
+            </div>
+          </div>
+
+          <!-- Cell 5: 空亡 (Bottom-Center) -->
+          <div id="cell-kongwang" class="grid-cell bg-white rounded-lg p-2 md:p-3 text-center border-2 border-stone-300 flex flex-col justify-between h-32 md:h-36 relative">
+            <div class="flex justify-between items-center text-xs font-bold text-stone-600 px-1">
+              <span class="shensha">騰蛇</span>
+              <span class="star text-amber-800">火星</span>
+            </div>
+            <div class="my-auto py-1">
+              <div class="text-2xl md:text-3xl font-black text-stone-900 tracking-widest dizhi">未</div>
+              <div class="text-xs font-bold text-amber-900 mt-0.5 liuqin">自身</div>
+            </div>
+            <div class="flex items-center justify-between text-xs pt-1 border-t border-stone-200">
+              <span class="font-bold text-stone-800 palacename">空亡</span>
+              <span class="tag-marker text-[10px] px-1 rounded font-bold"></span>
+            </div>
+          </div>
+
+          <!-- Cell 6: 小吉 (Bottom-Right) -->
+          <div id="cell-xiaoji" class="grid-cell bg-white rounded-lg p-2 md:p-3 text-center border-2 border-stone-300 flex flex-col justify-between h-32 md:h-36 relative">
+            <div class="flex justify-between items-center text-xs font-bold text-stone-600 px-1">
+              <span class="shensha">朱雀</span>
+              <span class="star text-amber-800">木星</span>
+            </div>
+            <div class="my-auto py-1">
+              <div class="text-2xl md:text-3xl font-black text-stone-900 tracking-widest dizhi">巳</div>
+              <div class="text-xs font-bold text-amber-900 mt-0.5 liuqin">父母</div>
+            </div>
+            <div class="flex items-center justify-between text-xs pt-1 border-t border-stone-200">
+              <span class="font-bold text-stone-800 palacename">小吉</span>
+              <span class="tag-marker text-[10px] px-1 rounded"></span>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] text-stone-500 mt-3 pt-2 border-t border-stone-200">
+          <span>※ 棕金標記：日建宮 (日) ；深紅金框：時辰自身宮 (時/身)</span>
+          <span>用神標籤：藍框標記</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section class="max-w-5xl mx-auto w-full mt-6">
+    <div class="bg-parchment-100 rounded-2xl p-5 md:p-6 shadow-xl border border-parchment-300">
+      <div class="flex items-center gap-2 mb-4 pb-2 border-b border-parchment-300">
+        <span class="w-2.5 h-2.5 bg-cinnabar rounded-full"></span>
+        <h3 class="text-lg font-bold text-parchment-900 tracking-wide">排盤綜合斷語與課例解析</h3>
+      </div>
+
+      <!-- Specific Consultation Focus -->
+      <div id="customAnalysis" class="mb-5 p-4 rounded-xl bg-amber-50 border border-amber-200/80 text-parchment-900">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- General Technical Breakdown (Jiang Chunyi Style Breakdown) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs md:text-sm text-stone-800 leading-relaxed font-sans">
+        <div class="p-3.5 bg-white/80 rounded-xl border border-parchment-200">
+          <h4 class="font-bold text-cinnabar text-sm mb-2 flex items-center gap-1 font-serif">
+            一、自身與時辰落宮斷語
+          </h4>
+          <p id="descSelf" class="text-stone-700 leading-relaxed"></p>
+        </div>
+
+        <div class="p-3.5 bg-white/80 rounded-xl border border-parchment-200">
+          <h4 class="font-bold text-cinnabar text-sm mb-2 flex items-center gap-1 font-serif">
+            二、用神吉凶與五行生剋
+          </h4>
+          <p id="descYongShen" class="text-stone-700 leading-relaxed"></p>
+        </div>
+
+        <div class="p-3.5 bg-white/80 rounded-xl border border-parchment-200">
+          <h4 class="font-bold text-cinnabar text-sm mb-2 flex items-center gap-1 font-serif">
+            三、客宮神煞照臨
+          </h4>
+          <p id="descShenSha" class="text-stone-700 leading-relaxed"></p>
+        </div>
+
+        <div class="p-3.5 bg-white/80 rounded-xl border border-parchment-200">
+          <h4 class="font-bold text-cinnabar text-sm mb-2 flex items-center gap-1 font-serif">
+            四、天星與地盤感應
+          </h4>
+          <p id="descStars" class="text-stone-700 leading-relaxed"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="text-center text-xs text-stone-500 mt-8 py-3">
+    小六壬傳統六宮排盤學術工具 · 陰陽隔位跳辰體系 · 純客戶端即時演化計算
+  </footer>
+
+  <script>
+    // Traditional Xiao Liu Ren 6 Palaces in clockwise cyclic order:
+    // 0:大安(木), 1:留戀(土), 2:速喜(火), 3:赤口(金), 4:小吉(水), 5:空亡(土)
+    const PALACES = [
+      { id: 'daan', name: '大安', element: '木', defaultNature: '身不動，求吉利，諸事平安安穩。' },
+      { id: 'liulian', name: '留戀', element: '土', defaultNature: '事多延宕，牽扯難解，求謀遲滯。' },
+      { id: 'suxi', name: '速喜', element: '火', defaultNature: '喜訊立至，文書官貴，求事速成。' },
+      { id: 'chikou', name: '赤口', element: '金', defaultNature: '口舌官非，受克不利，驚恐阻礙。' },
+      { id: 'xiaoji', name: '小吉', element: '水', defaultNature: '和合吉利，貴人提攜，凡事逢凶化吉。' },
+      { id: 'kongwang', name: '空亡', element: '土', defaultNature: '落空無實，謀事難成，凡事成空想。' }
+    ];
+
+    // Earthly Branches with elements and Yin/Yang
+    const EARTHLY_BRANCHES = [
+      { name: '子', num: 1, type: 'yang', element: '水' },
+      { name: '丑', num: 2, type: 'yin',  element: '土' },
+      { name: '寅', num: 3, type: 'yang', element: '木' },
+      { name: '卯', num: 4, type: 'yin',  element: '木' },
+      { name: '辰', num: 5, type: 'yang', element: '土' },
+      { name: '巳', num: 6, type: 'yin',  element: '火' },
+      { name: '午', num: 7, type: 'yang', element: '火' },
+      { name: '未', num: 8, type: 'yin',  element: '土' },
+      { name: '申', num: 9, type: 'yang', element: '金' },
+      { name: '酉', num: 10, type: 'yin', element: '金' },
+      { name: '戌', num: 11, type: 'yang', element: '土' },
+      { name: '亥', num: 12, type: 'yin', element: '水' }
+    ];
+
+    // Fixed Six Stars in Jiang's table for the 6 Palaces (Order: 大安土星, 留戀金星, 速喜水星, 赤口天空, 小吉木星, 空亡火星)
+    const PALACE_STARS = {
+      'daan': '土星',
+      'liulian': '金星',
+      'suxi': '水星',
+      'chikou': '天空',
+      'xiaoji': '木星',
+      'kongwang': '火星'
+    };
+
+    // Five elements sheng-ke relations
+    const FIVE_ELEMENTS = {
+      '木': { sheng: '火', ke: '土', beisheng: '水', beike: '金' },
+      '火': { sheng: '土', ke: '金', beisheng: '木', beike: '水' },
+      '土': { sheng: '金', ke: '水', beisheng: '火', beike: '木' },
+      '金': { sheng: '水', ke: '木', beisheng: '土', beike: '火' },
+      '水': { sheng: '木', ke: '火', beisheng: '金', beike: '土' }
+    };
+
+    // Six Spirits list (starting sequentially)
+    const SHENSHA_LIST = ['青龍', '朱雀', '勾陳', '騰蛇', '白虎', '玄武'];
+
+    // Map Category to desired Yong-Shen
+    const CATEGORY_MAP = {
+      'career': { name: '事業應徵', target: '官鬼', desc: '求職官運以官鬼為用神。官鬼旺相逢吉神則成，受克臨空則難成。' },
+      'wealth': { name: '求財經商', target: '妻財', desc: '求財經商以妻財為用神。財逢生旺主大利，財落空亡受克主破耗。' },
+      'health': { name: '健康疾病', target: '子孫', secondary: '自身', desc: '治病消災看子孫與自身落宮。子孫臨吉宮病易除，若自身逢空亡鬼動則延綿。' },
+      'love_female': { name: '問夫緣感情', target: '官鬼', desc: '女子問姻緣以官鬼為夫。官星旺相相生者婚姻吉美，逢克落空主波折。' },
+      'love_male': { name: '問妻緣感情', target: '妻財', desc: '男子問姻緣以妻財為妻。財星得地主夫妻和順，若入空亡留戀主牽扯難斷。' },
+      'study': { name: '學業考試', target: '父母', desc: '學業文憑以父母為用神。父母得生生印主金榜題名，臨赤口官非受克不順。' },
+      'travel': { name: '出行走失', target: '自身', desc: '出行安危看自身落宮。大安吉利平穩，赤口防驚險口舌，留戀行期受阻。' },
+      'lost': { name: '失物查找', target: '妻財', desc: '失物以妻財為用。財落大安可在近處家中尋，財落空亡難以找回。' }
+    };
+
+    function calculateChart(month, day, hourIndex) {
+      // 1. Month index: 大安 is 1, so (month - 1) % 6
+      const monthPalaceIdx = (month - 1) % 6;
+      // 2. Day index: Month palace as 1st, so add (day - 1)
+      const dayPalaceIdx = (monthPalaceIdx + (day - 1)) % 6;
+      // 3. Hour index: Day palace as 1st, so add (hourIndex - 1)
+      const hourPalaceIdx = (dayPalaceIdx + (hourIndex - 1)) % 6;
+
+      const selfBranch = EARTHLY_BRANCHES[hourIndex - 1];
+      const isYin = selfBranch.type === 'yin';
+
+      // 4. Branch arrangement: Yin branches or Yang branches
+      // In Jiang's chart, branches skip every other branch (alternating Yin/Yang)
+      // Filter candidates
+      const filteredBranches = EARTHLY_BRANCHES.filter(b => b.type === (isYin ? 'yin' : 'yang'));
+      
+      // Locate where self branch is in this subset
+      const selfSubIdx = filteredBranches.findIndex(b => b.name === selfBranch.name);
+
+      // Now distribute branches around the 6 palaces in ring order starting from hourPalaceIdx
+      // At hourPalaceIdx => branch is selfBranch (filteredBranches[selfSubIdx])
+      // Next palace (idx + 1) => next branch in cyclic order
+      const chartPalaces = [];
+      for (let i = 0; i < 6; i++) {
+        const pIdx = i;
+        const pal = PALACES[pIdx];
+
+        // Step distance along the cycle from hour palace
+        const step = (pIdx - hourPalaceIdx + 6) % 6;
+        const branchObj = filteredBranches[(selfSubIdx + step) % 6];
+
+        // Determine Liu Qin based on relation to Self Branch
+        const selfElem = selfBranch.element;
+        const targetElem = branchObj.element;
+        let liuqin = '';
+
+        if (pIdx === hourPalaceIdx) {
+          liuqin = '自身';
+        } else if (targetElem === selfElem) {
+          liuqin = '兄弟';
+        } else if (FIVE_ELEMENTS[selfElem].sheng === targetElem) {
+          liuqin = '子孫';
+        } else if (FIVE_ELEMENTS[selfElem].ke === targetElem) {
+          liuqin = '妻財';
+        } else if (FIVE_ELEMENTS[targetElem].ke === selfElem) {
+          liuqin = '官鬼';
+        } else if (FIVE_ELEMENTS[targetElem].sheng === selfElem) {
+          liuqin = '父母';
+        }
+
+        // Align Shensha based on traditional Jiang's case:
+        // In the classic book example: 
+        // Hour is 未(空亡) => 騰蛇臨空亡; 小吉(巳)朱雀, 赤口(卯)青龍, 速喜(丑)勾陳, 留戀(亥)玄武, 大安(酉)白虎
+        // Formula matching the sample:
+        // Offset mapping to Six Spirits:
+        const shenshaOrder = ['騰蛇', '朱雀', '青龍', '勾陳', '玄武', '白虎'];
+        // Distance from hourPalaceIdx
+        const shensha = shenshaOrder[step];
+
+        // Star is static to palace in this system
+        const star = PALACE_STARS[pal.id];
+
+        chartPalaces.push({
+          palace: pal,
+          palaceIndex: pIdx,
+          branch: branchObj,
+          liuqin: liuqin,
+          shensha: shensha,
+          star: star,
+          isDay: pIdx === dayPalaceIdx,
+          isHour: pIdx === hourPalaceIdx
+        });
+      }
+
+      return {
+        month,
+        day,
+        hourIndex,
+        selfBranch,
+        isYin,
+        monthPalaceIdx,
+        dayPalaceIdx,
+        hourPalaceIdx,
+        palaces: chartPalaces
+      };
+    }
+
+    function renderChart(result, categoryKey) {
+      const { month, day, hourIndex, selfBranch, isYin, monthPalaceIdx, dayPalaceIdx, hourPalaceIdx, palaces } = result;
+
+      // Update Subtitle & Badge
+      const hourObj = EARTHLY_BRANCHES[hourIndex - 1];
+      document.getElementById('chartSubTitle').innerText = `農曆 ${month} 月 ${day} 日 ${hourObj.name}時課式`;
+      document.getElementById('genderLabel').innerText = `${isYin ? '陰支組' : '陽支組'} · 隔位跳辰 (${isYin ? '丑卯巳未酉亥' : '子寅辰午申戌'})`;
+
+      // Update Path description
+      const calcPathEl = document.getElementById('calcPath');
+      calcPathEl.innerHTML = `
+        <div class="font-bold text-amber-900 mb-1">【落宮演算法則】</div>
+        1. <strong>月上起課</strong>：大安起正月，${month}月順數落在 <strong>${PALACES[monthPalaceIdx].name}</strong> 宮。<br>
+        2. <strong>日上起課</strong>：自月宮起初一，${day}日順數落在 <strong>${PALACES[dayPalaceIdx].name}</strong> 宮 (日建)。<br>
+        3. <strong>時辰起課</strong>：自日宮起子時，${hourObj.name}時 (${hourIndex}數) 落在 <strong>${PALACES[hourPalaceIdx].name}</strong> 宮 (身宮/自身)。<br>
+        4. <strong>地支納音</strong>：時支為「${hourObj.name}」（五行屬${hourObj.element}，屬${isYin ? '陰' : '陽'}支），全盤六宮以${hourObj.name}為起點順跳同性地支，以${hourObj.element}為我演化六親。
+      `;
+
+      // Target Yong Shen according to category
+      const targetCategory = CATEGORY_MAP[categoryKey];
+      const targetLiuQin = targetCategory.target;
+
+      // Update Grid Cells
+      palaces.forEach(item => {
+        const el = document.getElementById(`cell-${item.palace.id}`);
+        if (!el) return;
+
+        // Reset classes
+        el.className = 'grid-cell rounded-xl p-2.5 md:p-3 text-center border-2 flex flex-col justify-between h-36 md:h-40 relative transition';
+
+        // Highlighting logic
+        const tagMarker = el.querySelector('.tag-marker');
+        tagMarker.innerText = '';
+        tagMarker.className = 'tag-marker text-[10px] px-1.5 py-0.5 rounded font-bold';
+
+        if (item.isHour) {
+          // Hour / Self Palace: Distinctive cinnabar border & background
+          el.classList.add('border-cinnabar', 'bg-red-50/70', 'shadow-md');
+          tagMarker.innerText = '時 / 自身';
+          tagMarker.classList.add('bg-cinnabar', 'text-white');
+        } else if (item.isDay) {
+          // Day Palace: Ochre/Amber highlight
+          el.classList.add('border-amber-600', 'bg-amber-50/70');
+          tagMarker.innerText = '日建';
+          tagMarker.classList.add('bg-amber-600', 'text-white');
+        } else {
+          el.classList.add('border-stone-300', 'bg-white');
+        }
+
+        // Highlight if this palace contains the question's Yong-Shen
+        if (item.liuqin === targetLiuQin && !item.isHour) {
+          el.classList.add('ring-2', 'ring-blue-600/70', 'border-blue-400');
+          if (!tagMarker.innerText) {
+            tagMarker.innerText = '用神';
+            tagMarker.classList.add('bg-blue-600', 'text-white');
+          }
+        }
+
+        // Fill contents
+        el.querySelector('.shensha').innerText = item.shensha;
+        el.querySelector('.star').innerText = item.star;
+        
+        const dizhiEl = el.querySelector('.dizhi');
+        dizhiEl.innerText = item.branch.name;
+
+        const liuqinEl = el.querySelector('.liuqin');
+        liuqinEl.innerText = item.liuqin;
+
+        // Colorize Liuqin
+        if (item.liuqin === '自身') {
+          liuqinEl.className = 'text-xs font-black text-red-800 mt-0.5 liuqin';
+        } else if (item.liuqin === '官鬼') {
+          liuqinEl.className = 'text-xs font-black text-purple-800 mt-0.5 liuqin';
+        } else if (item.liuqin === '妻財') {
+          liuqinEl.className = 'text-xs font-black text-emerald-800 mt-0.5 liuqin';
+        } else if (item.liuqin === '父母') {
+          liuqinEl.className = 'text-xs font-black text-sky-800 mt-0.5 liuqin';
+        } else {
+          liuqinEl.className = 'text-xs font-bold text-amber-900 mt-0.5 liuqin';
+        }
+
+        el.querySelector('.palacename').innerText = item.palace.name;
+      });
+
+      // Render Interpretation texts
+      generateInterpretation(result, targetCategory);
+    }
+
+    function generateInterpretation(result, targetCategory) {
+      const { selfBranch, hourPalaceIdx, palaces } = result;
+      const hourPal = palaces[hourPalaceIdx];
+
+      // 1. Self Interpretation
+      let selfText = `<strong>自身臨【${hourPal.palace.name}宮】</strong>：`;
+      switch(hourPal.palace.id) {
+        case 'daan':
+          selfText += `身入大安，安泰平穩，不動為安。目前自身心態踏實，有貴人暗助，利於守成，謀事可從長計議。`;
+          break;
+        case 'liulian':
+          selfText += `自身臨留戀，主凡事拖延、猶豫難定。心緒有所羈絆，牽涉人情或手續未備，事未明朗前宜慎重防變。`;
+          break;
+        case 'suxi':
+          selfText += `自身坐速喜，喜兆立現，文書吉照。主自身思維敏捷，信心充盈，辦事宜速戰速決，多見捷報。`;
+          break;
+        case 'chikou':
+          selfText += `自身臨赤口，金煞克伐，主受口舌是非所困或壓力過大，事有爭端與波折，防口角誤會或官方審查受阻。`;
+          break;
+        case 'xiaoji':
+          selfText += `自身逢小吉，和合興旺之兆。得吉神臨位，諸事圓融，有人引薦成合，謀事順利有望。`;
+          break;
+        case 'kongwang':
+          selfText += `<strong>自身臨空亡主凡事落空、多生空想、求事無根。</strong> 心中猶豫不決，事無著落，勞而無功，目前機緣未熟。`;
+          break;
+      }
+      document.getElementById('descSelf').innerHTML = selfText;
+
+      // 2. Yong-Shen Palace & Elements
+      const yongPal = palaces.find(p => p.liuqin === targetCategory.target) || hourPal;
+      let yongText = `所問事屬<strong>【${targetCategory.name}】</strong>，以<strong>【${targetCategory.target}】</strong>為用神（落於<strong>${yongPal.palace.name}宮</strong>，地支<strong>${yongPal.branch.name}${yongPal.branch.element}</strong>）。<br>`;
+
+      // Ke & Sheng relations
+      const yongElem = yongPal.branch.element;
+      const selfElem = selfBranch.element;
+
+      if (yongPal.palace.id === 'kongwang') {
+        yongText += `<span class="text-cinnabar font-bold">用神臨空亡宮：</span>所求之事落空難就，猶如竹籃打水，主中途變卦或虛驚一場。`;
+      } else if (yongPal.palace.id === 'chikou') {
+        yongText += `<span class="text-cinnabar font-bold">用神受克臨赤口：</span>多主兇兆、競爭激烈、官私阻滯，諸事難成且易招嫌隙。`;
+      } else if (yongPal.palace.id === 'suxi' || yongPal.palace.id === 'daan' || yongPal.palace.id === 'xiaoji') {
+        yongText += `<span class="text-emerald-800 font-bold">用神臨吉宮（${yongPal.palace.name}）：</span>格局向好，具備天時地利，得吉位加持，進展平順。`;
+      } else {
+        yongText += `用神處留戀之宮，事涉延遲，短期內不易速決，宜通盤審視。`;
+      }
+      document.getElementById('descYongShen').innerHTML = yongText;
+
+      // 3. Shensha Commentary
+      let shenshaText = `身宮自身臨<strong>【${hourPal.shensha}】</strong>：`;
+      if (hourPal.shensha === '騰蛇') {
+        shenshaText += `騰蛇臨自身，主心思曲折、虛驚怪異、內心不安或事有反覆，防小人陰私作祟。`;
+      } else if (hourPal.shensha === '青龍') {
+        shenshaText += `青龍加臨，貴人高照，文采飛揚，求名求官最為順遂。`;
+      } else if (hourPal.shensha === '朱雀') {
+        shenshaText += `朱雀加臨，多文書訊息、亦招言語是非紛爭，重在謹言慎行。`;
+      } else if (hourPal.shensha === '白虎') {
+        shenshaText += `白虎加臨，主威嚴風波，防刑傷官訟或突來之逆境。`;
+      } else if (hourPal.shensha === '玄武') {
+        shenshaText += `玄武加臨，主曖昧暗昧、盜失遺漏，宜防受騙或陰私之事。`;
+      } else if (hourPal.shensha === '勾陳') {
+        shenshaText += `勾陳加臨，主拖延牽連、公事糾纏，遲緩難進。`;
+      }
+
+      // Yong shen's shensha
+      if (yongPal !== hourPal) {
+        shenshaText += `<br>用神（${yongPal.liuqin}）臨<strong>【${yongPal.shensha}】</strong>：${yongPal.shensha}入${yongPal.palace.name}，主相應人事之吉凶顯象。`;
+      }
+      document.getElementById('descShenSha').innerHTML = shenshaText;
+
+      // 4. Star Commentary
+      let starText = `地盤${yongPal.palace.name}承天盤<strong>【${yongPal.star}】</strong>。`;
+      if (yongPal.star === '天空') {
+        starText += `<strong>天空臨位不吉，主落空無成、虛名虛利。</strong>即使前期感覺良好，最終亦難以兌現。`;
+      } else if (yongPal.star === '火星') {
+        starText += `火星炎上焦躁，性急多動，需防心浮氣躁致使功虧一簣。`;
+      } else if (yongPal.star === '水星') {
+        starText += `水星靈活主智，通達流暢，應對變化宜順勢而為。`;
+      } else if (yongPal.star === '木星') {
+        starText += `木星主生發仁厚，得貴人暗扶，利於學術、策劃與生計。`;
+      } else if (yongPal.star === '金星') {
+        starText += `金星主果斷收斂，行事俐落，然亦主剛硬少融通。`;
+      } else {
+        starText += `土星主厚重敦實，進度穩重，唯恐動作稍慢。`;
+      }
+      document.getElementById('descStars').innerHTML = starText;
+
+      // 5. Custom Summary Box
+      const customBox = document.getElementById('customAnalysis');
+      let summaryContent = `
+        <div class="flex items-center gap-2 mb-2 font-bold text-base text-stone-900">
+          <span class="px-2 py-0.5 rounded bg-cinnabar text-white text-xs">斷課指引</span>
+          ${targetCategory.name}專斷：
+        </div>
+        <div class="text-sm space-y-1.5 leading-relaxed text-stone-800">
+      `;
+
+      if (targetCategory.target === '官鬼') {
+        if (yongPal.palace.id === 'chikou' && hourPal.palace.id === 'kongwang') {
+          summaryContent += `
+            <p class="font-semibold text-cinnabar">● 經典印證：官鬼受克臨赤口，自身空亡臨騰蛇。</p>
+            <p>此乃典型「考試感覺良好，面試錄用落空」之課象。自身落空亡代表心氣雖高但無實際著落；官鬼（面試/職位）臨赤口主競爭受挫，天盤逢天空加臨主虛，終難通過。</p>
+          `;
+        } else if (hourPal.palace.id === 'kongwang' || yongPal.palace.id === 'kongwang') {
+          summaryContent += `
+            <p class="font-semibold text-cinnabar">● 官星落空或自身落空，求官不利。</p>
+            <p>求職公務考試多有阻礙或錄取名額落空，不宜抱過高預期，宜另覓良機。</p>
+          `;
+        } else if (yongPal.palace.id === 'suxi' || yongPal.palace.id === 'daan') {
+          summaryContent += `
+            <p class="font-semibold text-emerald-800">● 官星得位，貴人青睞之課。</p>
+            <p>所求公職或職位有較高勝算，面試考評有文書喜信，速喜臨位宜盡速爭取。</p>
+          `;
+        } else {
+          summaryContent += `
+            <p>官鬼所臨之宮有牽絆之象，求事過程易有折衝與等待，需緊盯流程細節。</p>
+          `;
+        }
+      } else if (targetCategory.target === '妻財') {
+        if (yongPal.palace.id === 'kongwang') {
+          summaryContent += `
+            <p class="font-semibold text-cinnabar">● 財爻逢空亡，主破財求利無望。</p>
+            <p>短期內投資或大額開銷極易化為泡影，切勿輕信高回報項目。</p>
+          `;
+        } else if (yongPal.palace.id === 'liulian') {
+          summaryContent += `
+            <p>財爻入留戀，資金回籠緩慢，帳款有拖欠拉扯之勢，求財須有耐心。</p>
+          `;
+        } else {
+          summaryContent += `
+            <p class="font-semibold text-emerald-800">● 財星得宮，求財有門。</p>
+            <p>利於正常商務往來與求財，逢吉星主獲利穩實。</p>
+          `;
+        }
+      } else {
+        summaryContent += `
+          <p>看自身（${hourPal.palace.name}）與用神宮之相互克應：若自身身旺得生，則吉事可期；若受克逢空，宜修養生息、謹慎防範。</p>
+        `;
+      }
+      summaryContent += `</div>`;
+      customBox.innerHTML = summaryContent;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('formQiGua');
+      const btnNow = document.getElementById('btnNow');
+      const btnRandom = document.getElementById('btnRandom');
+
+      function runCurrentForm() {
+        const m = parseInt(document.getElementById('inputMonth').value, 10) || 1;
+        const d = parseInt(document.getElementById('inputDay').value, 10) || 1;
+        const h = parseInt(document.getElementById('selectHour').value, 10) || 1;
+        const cat = document.getElementById('selectCategory').value;
+
+        const res = calculateChart(m, d, h);
+        renderChart(res, cat);
+      }
+
+      // Form Submit
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        runCurrentForm();
+      });
+
+      // Quick "Now" Button
+      btnNow.addEventListener('click', () => {
+        const now = new Date();
+        // Convert to rough lunar estimation or user clock (month 1-12, day 1-30)
+        // For convenience and real-time mapping, maps hour 0-23 to 1-12 branch
+        const hours = now.getHours();
+        let branchIndex = Math.floor((hours + 1) % 24 / 2) + 1;
+
+        // Current month and day as numbers
+        const currentMonth = (now.getMonth() + 1);
+        const currentDay = now.getDate() > 30 ? 30 : now.getDate();
+
+        document.getElementById('inputMonth').value = currentMonth;
+        document.getElementById('inputDay').value = currentDay;
+        document.getElementById('selectHour').value = branchIndex;
+
+        runCurrentForm();
+      });
+
+      // Quick "Random" Button
+      btnRandom.addEventListener('click', () => {
+        const randMonth = Math.floor(Math.random() * 12) + 1;
+        const randDay = Math.floor(Math.random() * 30) + 1;
+        const randHour = Math.floor(Math.random() * 12) + 1;
+
+        document.getElementById('inputMonth').value = randMonth;
+        document.getElementById('inputDay').value = randDay;
+        document.getElementById('selectHour').value = randHour;
+
+        runCurrentForm();
+      });
+
+      // Initial run: Use the classic textbook case (四月初五未時 = 4, 5, 8)
+      runCurrentForm();
+    });
+  </script>
+</body>
+</html>
