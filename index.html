@@ -29,6 +29,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      flex-wrap: wrap;
     }
     h1 { font-size: 0.95rem; color: #fff; }
     .btn {
@@ -50,13 +51,14 @@
       flex: 1;
       height: calc(100vh - 49px);
     }
+    
+    /* 左側主時序圖區域 */
     .chart-panel {
       flex: 6.5;
       display: flex;
       flex-direction: column;
       border-right: 1px solid var(--border);
       min-width: 0;
-      position: relative;
     }
     .chart-toolbar {
       padding: 6px 14px;
@@ -67,25 +69,29 @@
       justify-content: space-between;
       align-items: center;
     }
-    .canvas-scroll-wrapper {
+    .chart-viewport {
       flex: 1;
-      overflow-x: auto;
-      overflow-y: hidden;
+      display: flex;
       background: #0d0d12;
+      overflow: hidden;
       position: relative;
     }
-    /* 建立虛擬滾動支撐層，避免寬度破表 */
-    #scrollSpacer {
-      height: 1px;
-      display: block;
+    /* 固定 Channel 標籤區 */
+    .label-pane {
+      width: 90px;
+      background: #121217;
+      border-right: 1px solid var(--border);
+      z-index: 2;
     }
-    #timelineCanvas {
-      position: sticky;
-      left: 0;
-      top: 0;
-      display: block;
+    /* 可左右滾動的波形區 */
+    .wave-scroll-pane {
+      flex: 1;
+      overflow-x: scroll;
+      overflow-y: hidden;
+      position: relative;
     }
 
+    /* 右側面板 */
     .side-panel {
       flex: 3.5;
       display: flex;
@@ -164,240 +170,25 @@
           <span><span style="color:var(--active-sig)">■ Active</span> | <span style="color:var(--passive-sig)">■ Passive</span></span>
           <span id="markerInfo" style="color:#60a5fa; margin-left: 12px;">就緒</span>
         </div>
-        <div>
-          <label style="color:#9ca3af; font-size:0.75rem;">縮放間距: </label>
-          <input type="range" id="zoomSlider" min="15" max="80" value="35" style="vertical-align: middle; width: 80px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label style="color:#9ca3af; font-size:0.75rem;">分頁區段:</label>
+          <select id="pageSelect" style="background:#252532; color:#fff; border:1px solid #3f3f50; border-radius:3px; padding:2px 4px; font-size:0.75rem;"></select>
         </div>
       </div>
       
-      <!-- 虛擬視窗容器 -->
-      <div class="canvas-scroll-wrapper" id="canvasWrapper">
-        <div id="scrollSpacer"></div>
-        <canvas id="timelineCanvas"></canvas>
+      <div class="chart-viewport">
+        <!-- 固定通道標籤畫布 -->
+        <div class="label-pane">
+          <canvas id="labelCanvas" width="90" height="350"></canvas>
+        </div>
+        <!-- 滾動波形畫布 -->
+        <div class="wave-scroll-pane" id="waveScrollPane">
+          <canvas id="waveCanvas" height="350"></canvas>
+        </div>
       </div>
     </div>
 
     <div class="side-panel">
       <div class="tab-bar">
         <button class="tab-btn active" onclick="switchTab('listTab')">事件列表</button>
-        <button class="tab-btn" onclick="switchTab('pasteTab')">貼上文字</button>
-      </div>
-
-      <div class="tab-content active" id="listTab">
-        <div style="padding:6px 8px; font-size:0.72rem; background:#14141c; color:#9ca3af; display:grid; grid-template-columns: 45px 55px 75px 1fr 45px;">
-          <span>#</span><span>Type</span><span>Hex[0:2]</span><span>ASCII</span><span>End</span>
-        </div>
-        <div class="log-list" id="logList"></div>
-      </div>
-
-      <div class="tab-content" id="pasteTab">
-        <textarea class="paste-box" id="pasteInput" placeholder="直接在此貼上包含 {Log:...} 的內容..."></textarea>
-        <button class="btn" style="border-radius:0; padding:8px;" id="parsePasteBtn">解析貼上內容</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const E84_CHANNELS = [
-      { name: "VALID", side: "active" },
-      { name: "CS_0", side: "active" },
-      { name: "TR_REQ", side: "active" },
-      { name: "BUSY", side: "active" },
-      { name: "COMPT", side: "active" },
-      { name: "L_REQ", side: "passive" },
-      { name: "U_REQ", side: "passive" },
-      { name: "READY", side: "passive" },
-      { name: "HO_AVBL", side: "passive" },
-      { name: "ES", side: "passive" }
-    ];
-
-    let parsedRecords = [];
-    let selectedIndex = -1;
-    let stepWidth = 35; // 每個事件橫向寬度
-    const labelWidth = 85;
-    const rowHeight = 32;
-
-    const canvas = document.getElementById('timelineCanvas');
-    const ctx = canvas.getContext('2d');
-    const canvasWrapper = document.getElementById('canvasWrapper');
-    const scrollSpacer = document.getElementById('scrollSpacer');
-    const logList = document.getElementById('logList');
-    const statusText = document.getElementById('statusText');
-    const markerInfo = document.getElementById('markerInfo');
-    const zoomSlider = document.getElementById('zoomSlider');
-
-    window.switchTab = function(tabId) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      if (tabId === 'listTab') {
-        document.querySelectorAll('.tab-btn')[0].classList.add('active');
-        document.getElementById('listTab').classList.add('active');
-      } else {
-        document.querySelectorAll('.tab-btn')[1].classList.add('active');
-        document.getElementById('pasteTab').classList.add('active');
-      }
-    };
-
-    zoomSlider.addEventListener('input', (e) => {
-      stepWidth = parseInt(e.target.value);
-      updateVirtualScroll();
-      renderVisible();
-    });
-
-    canvasWrapper.addEventListener('scroll', () => {
-      renderVisible();
-    });
-
-    function updateVirtualScroll() {
-      const totalWidth = labelWidth + parsedRecords.length * stepWidth + 200;
-      scrollSpacer.style.width = `${totalWidth}px`;
-    }
-
-    function parseLogText(content) {
-      const lines = content.split(/\r?\n/);
-      parsedRecords = [];
-
-      lines.forEach((line) => {
-        line = line.trim();
-        if (!line) return;
-
-        const clean = line.replace(/\{?Log:?/i, '').replace(/[\{\},]|0x/gi, ' ').trim();
-        let tokens = clean.split(/\s+/).filter(t => t.length > 0);
-
-        if (tokens.length === 1 && tokens[0].length >= 16) {
-          tokens = tokens[0].match(/.{1,2}/g) || [];
-        }
-
-        const bytes = tokens.map(t => parseInt(t, 16)).filter(n => !isNaN(n));
-        if (bytes.length < 8 || bytes[0] !== 0xA3) return;
-
-        const type = bytes[1];
-        const payload = bytes.slice(2, 7);
-        const endByte = bytes[7];
-
-        const u32Time = (payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24)) >>> 0;
-        const ascii = payload.map(b => (b >= 32 && b <= 126) ? String.fromCharCode(b) : '.').join('');
-
-        const bitmask = (payload[0] | (payload[1] << 8)) & 0x03FF;
-        const signals = {};
-        E84_CHANNELS.forEach((ch, idx) => {
-          signals[ch.name] = (bitmask & (1 << idx)) !== 0 ? 1 : 0;
-        });
-
-        parsedRecords.push({
-          index: parsedRecords.length,
-          type: type.toString(16).padStart(2, '0').toUpperCase(),
-          payloadHex: payload.map(b => b.toString(16).padStart(2, '0')).join(' '),
-          ascii: ascii,
-          u32: u32Time,
-          signals: signals,
-          end: endByte.toString(16).padStart(2, '0').toUpperCase()
-        });
-      });
-
-      statusText.innerText = `成功載入 ${parsedRecords.length} 筆資料`;
-      selectedIndex = -1;
-      updateVirtualScroll();
-      renderLogList();
-      renderVisible();
-    }
-
-    // 核心：只繪製瀏覽器視窗「看得到」的區域，徹底避免寬度超標
-    function renderVisible() {
-      const viewWidth = canvasWrapper.clientWidth || 800;
-      const viewHeight = E84_CHANNELS.length * rowHeight + 35;
-      const scrollLeft = canvasWrapper.scrollLeft;
-
-      // Canvas 大小固定與外框容器一致（不再是幾萬像素）
-      canvas.width = viewWidth;
-      canvas.height = viewHeight;
-      ctx.clearRect(0, 0, viewWidth, viewHeight);
-
-      // 計算目前畫面涵蓋第幾筆到第幾筆
-      const startIndex = Math.max(0, Math.floor((scrollLeft) / stepWidth) - 1);
-      const endIndex = Math.min(parsedRecords.length - 1, Math.ceil((scrollLeft + viewWidth - labelWidth) / stepWidth) + 1);
-
-      // 繪製軌道底線
-      E84_CHANNELS.forEach((ch, idx) => {
-        const y = idx * rowHeight + 25;
-        ctx.strokeStyle = '#22222d';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(labelWidth, y + 16);
-        ctx.lineTo(viewWidth, y + 16);
-        ctx.stroke();
-      });
-
-      // 繪製可視範圍內的波形
-      if (parsedRecords.length > 0) {
-        // 反白選取的項目
-        if (selectedIndex >= startIndex && selectedIndex <= endIndex) {
-          const markerX = labelWidth + selectedIndex * stepWidth - scrollLeft;
-          ctx.fillStyle = 'rgba(59, 130, 246, 0.2)';
-          ctx.fillRect(markerX, 5, stepWidth, viewHeight - 10);
-          ctx.strokeStyle = '#3b82f6';
-          ctx.strokeRect(markerX, 5, stepWidth, viewHeight - 10);
-        }
-
-        E84_CHANNELS.forEach((ch, chIdx) => {
-          const baseY = chIdx * rowHeight + 25;
-          const highY = baseY + 4;
-          const lowY = baseY + 16;
-
-          ctx.strokeStyle = ch.side === 'active' ? '#22c55e' : '#eab308';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-
-          for (let rIdx = startIndex; rIdx <= endIndex; rIdx++) {
-            const x = labelWidth + rIdx * stepWidth - scrollLeft;
-            const val = parsedRecords[rIdx].signals[ch.name];
-            const currY = val === 1 ? highY : lowY;
-
-            if (rIdx === startIndex) {
-              ctx.moveTo(x, currY);
-            } else {
-              const prevVal = parsedRecords[rIdx - 1].signals[ch.name];
-              const prevY = prevVal === 1 ? highY : lowY;
-              ctx.lineTo(x, prevY);
-              ctx.lineTo(x, currY);
-            }
-            ctx.lineTo(x + stepWidth, currY);
-          }
-          ctx.stroke();
-        });
-
-        // 頂部索引文字
-        ctx.fillStyle = '#6b7280';
-        ctx.font = '10px monospace';
-        for (let rIdx = startIndex; rIdx <= endIndex; rIdx++) {
-          const x = labelWidth + rIdx * stepWidth - scrollLeft;
-          if (rIdx % 5 === 0) {
-            ctx.fillText(`#${rIdx}`, x + 2, 16);
-          }
-        }
-      }
-
-      // 遮罩覆蓋左側，讓 Channel Label 固定不動 (Sticky)
-      ctx.fillStyle = '#121217';
-      ctx.fillRect(0, 0, labelWidth, viewHeight);
-      ctx.strokeStyle = '#333342';
-      ctx.beginPath();
-      ctx.moveTo(labelWidth, 0);
-      ctx.lineTo(labelWidth, viewHeight);
-      ctx.stroke();
-
-      // 繪製固定的 Channel 名稱
-      E84_CHANNELS.forEach((ch, idx) => {
-        const y = idx * rowHeight + 25;
-        ctx.fillStyle = ch.side === 'active' ? '#22c55e' : '#eab308';
-        ctx.font = '11px monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText(ch.name, 10, y + 14);
-      });
-    }
-
-    function renderLogList() {
-      logList.innerHTML = '';
-      parsedRecords.forEach((item, i) => {
-        const row = document.createElement('div');
-        row.className =
+        <button class="tab-btn" onclick="switchTab('pasteTab')">貼上文字</button
