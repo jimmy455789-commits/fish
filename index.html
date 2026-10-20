@@ -2,21 +2,19 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>SEMI E84 / Hex Log 分析與時序圖檢視器</title>
+  <title>SEMI E84 / Hex Log 時序分析器</title>
   <style>
     :root {
-      --bg: #1e1e24;
-      --panel: #2b2b36;
-      --border: #3f3f50;
+      --bg: #121217;
+      --panel: #1e1e26;
+      --border: #333342;
       --text: #e0e0e0;
-      --accent: #4daafc;
-      --active-sig: #4ade80;
-      --passive-sig: #fbbf24;
-      --hover: #373747;
+      --active-sig: #22c55e;
+      --passive-sig: #eab308;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", monospace;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Consolas, monospace;
       background: var(--bg);
       color: var(--text);
       display: flex;
@@ -25,106 +23,447 @@
       overflow: hidden;
     }
     header {
-      padding: 10px 18px;
+      padding: 10px 16px;
       background: var(--panel);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
+      flex-wrap: wrap;
     }
-    h1 { font-size: 1.1rem; color: #fff; }
-    .file-input-label {
-      padding: 6px 14px;
-      background: var(--accent);
-      color: #000;
+    h1 { font-size: 1rem; color: #fff; }
+    .btn {
+      padding: 5px 12px;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
       border-radius: 4px;
       cursor: pointer;
-      font-weight: 600;
       font-size: 0.85rem;
+      font-weight: 500;
     }
+    .btn:hover { background: #2563eb; }
+    .btn-secondary { background: #4b5563; }
+    .btn-secondary:hover { background: #374151; }
     input[type="file"] { display: none; }
-    .status { font-size: 0.85rem; color: #9ca3af; }
+    .status { font-size: 0.8rem; color: #9ca3af; margin-left: 6px; }
 
     .main-container {
       display: flex;
       flex: 1;
-      height: calc(100vh - 53px);
+      height: calc(100vh - 54px);
     }
-    /* 時序圖畫布區 */
-    .chart-container {
-      flex: 6;
-      border-right: 1px solid var(--border);
+    .chart-panel {
+      flex: 7;
       display: flex;
       flex-direction: column;
-      position: relative;
+      border-right: 1px solid var(--border);
+      min-width: 0;
     }
-    .chart-toolbar {
-      padding: 8px 14px;
-      background: #252530;
+    .chart-info {
+      padding: 6px 14px;
+      background: #181820;
       border-bottom: 1px solid var(--border);
       font-size: 0.8rem;
       display: flex;
-      gap: 20px;
+      gap: 16px;
     }
     .canvas-scroll-wrapper {
       flex: 1;
-      overflow-x: auto;
-      overflow-y: auto;
+      overflow: auto;
+      background: #0d0d12;
       position: relative;
-      background: #18181f;
     }
     canvas { display: block; }
 
-    /* 文字清單區 */
-    .log-container {
+    .side-panel {
       flex: 4;
       display: flex;
       flex-direction: column;
       background: var(--panel);
+      min-width: 320px;
     }
-    .log-header {
-      padding: 8px 14px;
-      background: #252530;
+    .tab-bar {
+      display: flex;
+      background: #181820;
       border-bottom: 1px solid var(--border);
-      font-size: 0.85rem;
-      font-weight: bold;
     }
+    .tab-btn {
+      flex: 1;
+      padding: 8px;
+      background: none;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .tab-btn.active {
+      color: #fff;
+      font-weight: bold;
+      border-bottom: 2px solid #3b82f6;
+      background: var(--panel);
+    }
+    .tab-content { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+    .tab-content.active { display: flex; }
+
     .log-list {
       flex: 1;
       overflow-y: auto;
-      font-size: 0.8rem;
       font-family: monospace;
+      font-size: 0.78rem;
     }
     .log-row {
       display: grid;
-      grid-template-columns: 45px 75px 85px 1fr 50px;
-      padding: 6px 12px;
-      border-bottom: 1px solid #333342;
+      grid-template-columns: 45px 65px 80px 1fr 40px;
+      padding: 5px 10px;
+      border-bottom: 1px solid #292938;
       cursor: pointer;
-      transition: background 0.15s;
     }
-    .log-row:hover { background: var(--hover); }
+    .log-row:hover { background: #2b2b3a; }
     .log-row.selected { background: #1e3a5f !important; }
-    .sig-active { color: var(--active-sig); }
-    .sig-passive { color: var(--passive-sig); }
-    .sig-other { color: #94a3b8; }
+
+    textarea.paste-box {
+      flex: 1;
+      background: #15151c;
+      color: #d1d5db;
+      border: none;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      resize: none;
+      outline: none;
+    }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>E84 / Hex Log 時序分析器</h1>
-    <label class="file-input-label">
-      匯入 TXT Log 檔
-      <input type="file" id="fileInput" accept=".txt,.log">
+    <h1>E84 Log 解析器</h1>
+    <label class="btn">
+      匯入 TXT 檔
+      <input type="file" id="fileInput" accept=".txt,.log,*">
     </label>
-    <button id="loadSampleBtn" style="padding: 6px 10px; background:#475569; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:0.85rem;">載入截圖範例資料</button>
-    <span class="status" id="statusText">請上傳包含 {Log: a3 ...} 格式的檔案</span>
+    <button class="btn btn-secondary" id="loadSampleBtn">載入範例資料</button>
+    <span class="status" id="statusText">初始化就緒</span>
   </header>
 
   <div class="main-container">
-    <!-- 時序圖區塊 -->
-    <div class="chart-container">
-      <div class="chart-toolbar">
+    <!-- 時序圖區 -->
+    <div class="chart-panel">
+      <div class="chart-info">
         <span><b>圖例：</b> <span style="color:var(--active-sig)">■ Active 訊號</span> | <span style="color:var(--passive-sig)">■ Passive 訊號</span></span>
-        <span id="markerInfo">點擊時序圖或
+        <span id="markerInfo" style="color:#60a5fa">點選下方列表或時序圖檢視</span>
+      </div>
+      <div class="canvas-scroll-wrapper" id="canvasWrapper">
+        <canvas id="timelineCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- 右側面板 -->
+    <div class="side-panel">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('listTab')">事件列表</button>
+        <button class="tab-btn" onclick="switchTab('pasteTab')">直接貼上文字</button>
+      </div>
+
+      <!-- Tab 1: 事件列表 -->
+      <div class="tab-content active" id="listTab">
+        <div style="padding:6px 10px; font-size:0.75rem; background:#14141c; color:#9ca3af; display:grid; grid-template-columns: 45px 65px 80px 1fr 40px;">
+          <span>#</span><span>Type</span><span>Hex[0:2]</span><span>ASCII</span><span>End</span>
+        </div>
+        <div class="log-list" id="logList"></div>
+      </div>
+
+      <!-- Tab 2: 直接貼上文字 -->
+      <div class="tab-content" id="pasteTab">
+        <textarea class="paste-box" id="pasteInput" placeholder="直接在此貼上包含 {Log:...} 的內容..."></textarea>
+        <button class="btn" style="border-radius:0; padding:8px;" id="parsePasteBtn">解析貼上內容</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 10 條 SEMI E84 標準關鍵通道
+    const E84_CHANNELS = [
+      { name: "VALID", side: "active" },
+      { name: "CS_0", side: "active" },
+      { name: "TR_REQ", side: "active" },
+      { name: "BUSY", side: "active" },
+      { name: "COMPT", side: "active" },
+      { name: "L_REQ", side: "passive" },
+      { name: "U_REQ", side: "passive" },
+      { name: "READY", side: "passive" },
+      { name: "HO_AVBL", side: "passive" },
+      { name: "ES", side: "passive" }
+    ];
+
+    let parsedRecords = [];
+    let selectedIndex = -1;
+
+    const canvas = document.getElementById('timelineCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+    const logList = document.getElementById('logList');
+    const statusText = document.getElementById('statusText');
+    const markerInfo = document.getElementById('markerInfo');
+
+    // Tab 切換
+    window.switchTab = function(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      if (tabId === 'listTab') {
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        document.getElementById('listTab').classList.add('active');
+      } else {
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        document.getElementById('pasteTab').classList.add('active');
+      }
+    };
+
+    // 初始繪製空畫布（確保打開時就有圖例與軌道）
+    function initEmptyTimeline() {
+      const rowHeight = 36;
+      const totalWidth = Math.max(canvasWrapper.clientWidth || 600, 700);
+      const totalHeight = E84_CHANNELS.length * rowHeight + 40;
+
+      canvas.width = totalWidth;
+      canvas.height = totalHeight;
+      ctx.clearRect(0, 0, totalWidth, totalHeight);
+
+      E84_CHANNELS.forEach((ch, idx) => {
+        const y = idx * rowHeight + 35;
+        // 圖例文字
+        ctx.fillStyle = ch.side === 'active' ? '#22c55e' : '#eab308';
+        ctx.font = '12px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(ch.name, 12, y + 16);
+
+        // 基準槽線
+        ctx.strokeStyle = '#22222d';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(90, y + 20);
+        ctx.lineTo(totalWidth, y + 20);
+        ctx.stroke();
+      });
+    }
+
+    // 寬鬆解析文字
+    function parseLogText(content) {
+      const lines = content.split(/\r?\n/);
+      parsedRecords = [];
+
+      lines.forEach((line) => {
+        line = line.trim();
+        if (!line) return;
+
+        // 提取十六進位 token
+        const clean = line.replace(/\{?Log:?/i, '').replace(/[\{\},]|0x/gi, ' ').trim();
+        let tokens = clean.split(/\s+/).filter(t => t.length > 0);
+
+        if (tokens.length === 1 && tokens[0].length >= 16) {
+          tokens = tokens[0].match(/.{1,2}/g) || [];
+        }
+
+        const bytes = tokens.map(t => parseInt(t, 16)).filter(n => !isNaN(n));
+        
+        // 需滿 8 Byte 且首碼為 0xA3
+        if (bytes.length < 8 || bytes[0] !== 0xA3) return;
+
+        const type = bytes[1];
+        const payload = bytes.slice(2, 7);
+        const endByte = bytes[7];
+
+        const u32Time = (payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24)) >>> 0;
+        const ascii = payload.map(b => (b >= 32 && b <= 126) ? String.fromCharCode(b) : '.').join('');
+
+        // 將狀態映射到通道（低 10 位元）
+        const bitmask = (payload[0] | (payload[1] << 8)) & 0x03FF;
+        const signals = {};
+        E84_CHANNELS.forEach((ch, idx) => {
+          signals[ch.name] = (bitmask & (1 << idx)) !== 0 ? 1 : 0;
+        });
+
+        parsedRecords.push({
+          index: parsedRecords.length,
+          type: type.toString(16).padStart(2, '0').toUpperCase(),
+          payloadHex: payload.map(b => b.toString(16).padStart(2, '0')).join(' '),
+          ascii: ascii,
+          u32: u32Time,
+          signals: signals,
+          end: endByte.toString(16).padStart(2, '0').toUpperCase()
+        });
+      });
+
+      statusText.innerText = `成功載入 ${parsedRecords.length} 筆資料`;
+      selectedIndex = -1;
+      renderLogList();
+      renderTimeline();
+
+      if (parsedRecords.length === 0) {
+        alert("未辨識到符合條件的日誌。每行需滿 8 個 Byte 且以 a3 開頭。");
+      }
+    }
+
+    // 繪製時序圖
+    function renderTimeline() {
+      if (parsedRecords.length === 0) {
+        initEmptyTimeline();
+        return;
+      }
+
+      const rowHeight = 36;
+      const stepWidth = 46;
+      const labelWidth = 90;
+      const totalWidth = Math.max(canvasWrapper.clientWidth || 600, labelWidth + parsedRecords.length * stepWidth + 50);
+      const totalHeight = E84_CHANNELS.length * rowHeight + 40;
+
+      canvas.width = totalWidth;
+      canvas.height = totalHeight;
+      ctx.clearRect(0, 0, totalWidth, totalHeight);
+
+      // 背景通道與文字
+      E84_CHANNELS.forEach((ch, idx) => {
+        const y = idx * rowHeight + 35;
+        ctx.fillStyle = ch.side === 'active' ? '#22c55e' : '#eab308';
+        ctx.font = '12px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(ch.name, 12, y + 16);
+
+        ctx.strokeStyle = '#22222d';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(labelWidth, y + 20);
+        ctx.lineTo(totalWidth, y + 20);
+        ctx.stroke();
+      });
+
+      // 選取反白條
+      if (selectedIndex >= 0) {
+        const markerX = labelWidth + selectedIndex * stepWidth;
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.2)';
+        ctx.fillRect(markerX, 10, stepWidth, totalHeight - 20);
+        ctx.strokeStyle = '#3b82f6';
+        ctx.strokeRect(markerX, 10, stepWidth, totalHeight - 20);
+      }
+
+      // 波形繪製
+      E84_CHANNELS.forEach((ch, chIdx) => {
+        const baseY = chIdx * rowHeight + 35;
+        const highY = baseY + 4;
+        const lowY = baseY + 20;
+
+        ctx.strokeStyle = ch.side === 'active' ? '#22c55e' : '#eab308';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        parsedRecords.forEach((rec, rIdx) => {
+          const x = labelWidth + rIdx * stepWidth;
+          const currY = rec.signals[ch.name] === 1 ? highY : lowY;
+
+          if (rIdx === 0) {
+            ctx.moveTo(x, currY);
+            ctx.lineTo(x + stepWidth, currY);
+          } else {
+            const prevVal = parsedRecords[rIdx - 1].signals[ch.name];
+            const prevY = prevVal === 1 ? highY : lowY;
+            ctx.lineTo(x, prevY);
+            ctx.lineTo(x, currY);
+            ctx.lineTo(x + stepWidth, currY);
+          }
+        });
+        ctx.stroke();
+      });
+
+      // 頂部索引
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '10px monospace';
+      parsedRecords.forEach((rec, rIdx) => {
+        const x = labelWidth + rIdx * stepWidth + 4;
+        ctx.fillText(`#${rIdx}`, x, 22);
+      });
+    }
+
+    // 渲染文字表
+    function renderLogList() {
+      logList.innerHTML = '';
+      parsedRecords.forEach((item, i) => {
+        const row = document.createElement('div');
+        row.className = `log-row ${i === selectedIndex ? 'selected' : ''}`;
+        row.innerHTML = `
+          <span>#${i}</span>
+          <span style="color:#f43f5e">0x${item.type}</span>
+          <span>${item.payloadHex.slice(0, 5)}..</span>
+          <span style="color:#38bdf8">${item.ascii}</span>
+          <span>0x${item.end}</span>
+        `;
+        row.onclick = () => selectRecord(i);
+        logList.appendChild(row);
+      });
+    }
+
+    function selectRecord(index) {
+      selectedIndex = index;
+      const rec = parsedRecords[index];
+      markerInfo.innerHTML = `已選取 <b>#${index}</b> | Type: 0x${rec.type} | U32: ${rec.u32} | ASCII: <code>${rec.ascii}</code>`;
+      renderTimeline();
+      renderLogList();
+      const rows = logList.getElementsByClassName('log-row');
+      if (rows[index]) rows[index].scrollIntoView({ block: 'nearest' });
+    }
+
+    // 監聽畫布點擊
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const labelWidth = 90;
+      const stepWidth = 46;
+      if (clickX >= labelWidth && parsedRecords.length > 0) {
+        const idx = Math.floor((clickX - labelWidth) / stepWidth);
+        if (idx >= 0 && idx < parsedRecords.length) selectRecord(idx);
+      }
+    });
+
+    // 檔案選取
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => parseLogText(evt.target.result);
+      reader.readAsText(file);
+    });
+
+    // 貼上解析按鈕
+    document.getElementById('parsePasteBtn').addEventListener('click', () => {
+      const txt = document.getElementById('pasteInput').value;
+      if (!txt.trim()) return alert("請先貼上內容！");
+      parseLogText(txt);
+      switchTab('listTab');
+    });
+
+    // 截圖範例測試按鈕
+    document.getElementById('loadSampleBtn').addEventListener('click', () => {
+      const sample = [
+        "{Log:a3 ea 68 70 69 6f 04 29}",
+        "{Log:a3 0f 2d 2d 2d 01 2d 2d}",
+        "{Log:a3 0f 30 31 30 02 33 31}",
+        "{Log:a3 ff 07 00 20 08 30 00}",
+        "{Log:a3 0f 9a f4 10 00 31 c8}",
+        "{Log:a3 0f 2d 2d 2d 01 2d 2d}",
+        "{Log:a3 0f 30 31 30 02 33 31}",
+        "{Log:a3 ff b4 7a 33 00 30 00}",
+        "{Log:a3 01 f1 7a 33 84 c0 00}",
+        "{Log:a3 1a 3d 3d 14 9f b2 28}"
+      ].join('\n');
+      parseLogText(sample);
+    });
+
+    // 頁面載入先繪製骨架圖例
+    window.addEventListener('load', initEmptyTimeline);
+    window.addEventListener('resize', () => {
+      if (parsedRecords.length === 0) initEmptyTimeline();
+      else renderTimeline();
+    });
+  </script>
+</body>
+</html>
